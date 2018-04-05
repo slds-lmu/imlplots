@@ -120,18 +120,6 @@ regrAlePlot = function(data, model, target, var, knots) {
     target = target,
     model = model,
     var = var)
-  if (is.factor(data[[var]]){
-    ale_df = data.frame(x = aleplot_obj$x.values, y = aleplot_obj$f.values)
-    plot = ggplot(data = ale_df,
-      aes_string(x = "x",
-        y = "y")
-    ) +
-      geom_bar(stat="identity", fill="steelblue") +
-      labs(y = paste("ALE main effect of", var, "on", target), x = var) +
-      theme_pubr()
-    
-    return(plot)
-  } else {
     ale_df = data.frame(x = aleplot_obj$x.values, y = aleplot_obj$f.values)
     plot = ggplot(data = ale_df,
       aes_string(x = "x",
@@ -140,7 +128,7 @@ regrAlePlot = function(data, model, target, var, knots) {
       geom_line(size = 1, color = "steelblue") +
       labs(y = paste("ALE main effect of", var, "on", target), x = var) +
       theme_pubr()
-  }
+    return(plot)
 }
 
 scatterPlot <- function(data, target, var, highlighted) {
