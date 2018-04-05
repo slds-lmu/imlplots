@@ -5,8 +5,10 @@ date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Vignette Title}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
 # imlplots: interpretable machine learning plots
@@ -20,6 +22,9 @@ vignette: >
 library(knitr)
 opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
 set.seed(42)
+load("../data/boston.rda")
+load("../data/fire.rda")
+library(mlr)
 ```
 
 # Installation 
@@ -53,12 +58,12 @@ boston.task = makeRegrTask(data = boston, target = "medv")
 The `imlplots` dashboard allows the comparison of multiple learning algorithms, therefore we fit two different models - first a random forest and second a SVM.
 ```{r}
 rf.mod = train("regr.randomForest", boston.task)
-svm.mod = train("regr.ksvm", boston.task)
+glm.mod = train("regr.glm", boston.task)
 ```
 
 The input for the Shiny app is a list of learners.
 ```{r}
-mod.list = list(rf.mod, svm.mod)
+mod.list = list(rf.mod, glm.mod)
 ```
 
 Now the Shiny app can be used.
@@ -98,7 +103,7 @@ fire.models = list(fire.lm, fire.glm, fire.rf, fire.gbm)
 ```
 
 No we can open the `imlplots` Shiny app.
-```{r}
+```{r, eval=FALSE}
 imlplots(data = fire, task = fire.task, models = fire.models)
 ```
 

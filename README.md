@@ -76,6 +76,19 @@ Now the Shiny app can be used.
 imlplots(data = boston, task = boston.task, models = mod.list)
 ```
 
+Code for Copy & Paste
+---------------------
+
+``` r
+boston.task = makeRegrTask(data = boston, target = "medv")
+
+rf.mod = train("regr.randomForest", boston.task)
+glm.mod = train("regr.glm", boston.task)
+mod.list = list(rf.mod, glm.mod)
+
+imlplots(data = boston, task = boston.task, models = mod.list)
+```
+
 References
 ==========
 
