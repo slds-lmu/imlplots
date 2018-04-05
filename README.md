@@ -15,7 +15,7 @@ The package can be installed directly from github with devtools:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github('riebetob/imlplots')
+devtools::install_github('juliafried/imlplots')
 library(imlplots)
 ```
 
