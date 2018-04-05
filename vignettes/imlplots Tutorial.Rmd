@@ -1,5 +1,12 @@
 ---
-output: github_document
+title: "Vignette Title"
+author: "Julia Fried, Tobias Riebe, Christian Scholbeck"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 # imlplots: interpretable machine learning plots
@@ -8,8 +15,6 @@ output: github_document
 * Partial Dependence Plots (PDP)
 * Individual Conditional Expectation (ICE) plots
 * Accumulated Local Effect (ALE) plots
-
-
 
 ```{r global_options, include=FALSE}
 library(knitr)
@@ -25,14 +30,12 @@ devtools::install_github('juliafried/imlplots')
 library(imlplots)
 ```
 
-
 # Quickstart
 You can fit classification and regression problems from the `mlr` package and analyse possible interaction effects in the Shiny dasbhoard.
 
 For quickstart we take the popular Boston Housing data, where we want to predict the median housing price in Boston.
 ```{r}
-library(MASS)
-data(Boston)
+head(boston)
 ```
 
 For using `imlplots` Shiny dashboard, three input arguments need to be specified
@@ -44,8 +47,7 @@ For using `imlplots` Shiny dashboard, three input arguments need to be specified
 We create a regression task with `medv` as target variable.
 The task structure is determined by `mlr` package.
 ```{r}
-library(mlr)
-boston.task = makeRegrTask(data = Boston, target = "medv")
+boston.task = makeRegrTask(data = boston, target = "medv")
 ```
 
 The `imlplots` dashboard allows the comparison of multiple learning algorithms, therefore we fit two different models - first a random forest and second a SVM.
@@ -61,8 +63,20 @@ mod.list = list(rf.mod, svm.mod)
 
 Now the Shiny app can be used.
 ```{r, eval=FALSE}
-imlplots(data = Boston, task = boston.task, models = mod.list)
+imlplots(data = boston, task = boston.task, models = mod.list)
 ```
+
+# Further Examples
+
+## IML Plots for Classification Tasks
+
+## IML Plots for Regression Tasks
+To show how you can use the `imlplots` Shiny app for regression tasks we use fire data, where the burned area due to fires should be analyzed. 
+
+```{r}
+head(fire)
+```
+
 
 # References
 
@@ -70,6 +84,3 @@ imlplots(data = Boston, task = boston.task, models = mod.list)
 * [mmpf R package](https://github.com/zmjones/mmpf)
 * [ALE plots](https://arxiv.org/abs/1612.08468)
 * [ALE R package](https://cran.r-project.org/web/packages/ALEPlot/index.html)
-
-
-

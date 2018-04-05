@@ -1,17 +1,4 @@
 classifIcePlot = function(pred, var, knots, lines, centered, centerpoint) {
-  #' ICE Plot
-  #' @description
-  #' This function generates the Individual Conditional Expectation (ICE) Plot
-  #' for classification tasks.
-  #' Use \code{imlplots(data, task, models)} as main function and for creating the
-  #' interactive Shiny dashboard.
-  #' @param pred The prediction from \code{marginalPrediction()}
-  #' @param var The input variables
-  #' @param knots The amout of knots
-  #' @param lines The amout of lines
-  #' @param centered Selection if ICE plot should be centered or not
-  #' @param centerpoint If ICE plot is centered, the centerpoint can be choosen
-
   longformat_pred = melt(pred, id.vars = var) %>%
     mutate(class = sub('\\..*$','', variable))
   pdp_data = filter(longformat_pred, grepl('ave', variable))
@@ -51,17 +38,6 @@ classifIcePlot = function(pred, var, knots, lines, centered, centerpoint) {
 }
 
 classifPartialDependencePlot = function(pred, var, target, knots) {
-  #' PDP Plot
-  #' @description
-  #' This function generates the Partial Dependence Plots (PDP)
-  #' for classification tasks.
-  #' Use \code{imlplots(data, task, models)} as main function and for creating the
-  #' interactive Shiny dashboard.
-  #' @param pred The prediction from \code{marginalPrediction()}
-  #' @param var The input variables
-  #' @param target The target variable
-  #' @param knots The amout of knots
-
   longformat_pred = melt(pred, id.vars = var) %>%
     mutate(class = sub('\\..*$','', variable))
   pdp_data = filter(longformat_pred, grepl('ave', variable))
@@ -76,16 +52,6 @@ classifPartialDependencePlot = function(pred, var, target, knots) {
 }
 
 regrPartialDependencePlot = function(pred, var, target, knots) {
-  #' PDP Plot
-  #' @description
-  #' This function generates the Partial Dependence Plots (PDP)
-  #' for regression tasks.
-  #' Use \code{imlplots(data, task, models)} as main function and for creating the
-  #' interactive Shiny dashboard.
-  #' @param pred The prediction from \code{marginalPrediction()}
-  #' @param var The input variables
-  #' @param target The target variable
-  #' @param knots The amout of knots
   ggplot() +
     geom_line(data = pred,
               aes_string(x = var, y = "preds.ave"),
@@ -97,18 +63,6 @@ regrPartialDependencePlot = function(pred, var, target, knots) {
 }
 
 regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
-  #' ICE Plot
-  #' @description
-  #' This function generates the Individual Conditional Expectation (ICE) Plot
-  #' for regression tasks.
-  #' Use \code{imlplots(data, task, models)} as main function and for creating the
-  #' interactive Shiny dashboard.
-  #' @param pred The prediction from \code{marginalPrediction()}
-  #' @param var The input variables
-  #' @param knots The amout of knots
-  #' @param lines The amout of lines
-  #' @param centered Selection if ICE plot should be centered or not
-  #' @param centerpoint If ICE plot is centered, the centerpoint can be choosen
   if (lines <= 15) {
     line.alpha = 1
     line.size = 0.7
@@ -147,15 +101,6 @@ regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
 }
 
 regrAlePlot = function(data, model, target, var, knots) {
-  #' ALE Plot
-  #' @description Create an accumulated local effects plot for regression tasks.
-  #' Use \code{imlplots(data, task, models)} as main function and for creating the
-  #' interactive Shiny dashboard.
-  #' @param pred The prediction from \code{marginalPrediction()}
-  #' @param var The input variables
-  #' @param target The target variable
-  #' @param knots The amout of knots
-  #function to keep ALEplot invisible but keeping the data
   AlePlot.invisible <- function(){
     ff <- tempfile()
     png(filename=ff)
