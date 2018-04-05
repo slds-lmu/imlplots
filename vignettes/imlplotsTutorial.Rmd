@@ -12,7 +12,7 @@ editor_options:
 ---
 
 # imlplots: interpretable machine learning plots
-`imlplots ` is an R package that provide an interactive Shiny dashboard for three kinds of Interpretable Machine Learning (IML) plots
+`imlplots ` is an R package that provides an interactive Shiny dashboard for three kinds of Interpretable Machine Learning (IML) plots
  
 * Partial Dependence Plots (PDP)
 * Individual Conditional Expectation (ICE) plots
@@ -74,7 +74,7 @@ Now the Shiny app can be used.
 imlplots(data = boston, task = boston.task, models = mod.list)
 ```
 
-## Code for Copy & Paset
+## Code for Copy & Paste
 ```{r, eval=FALSE}
 boston.task = makeRegrTask(data = boston, target = "medv")
 
