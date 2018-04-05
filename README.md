@@ -11,7 +11,7 @@ imlplots: interpretable machine learning plots
 Installation
 ============
 
-The package can be installed directly from github with devtools:
+The package can be installed directly from github with devtools
 
 ``` r
 # install.packages("devtools")

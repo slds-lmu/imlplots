@@ -12,7 +12,7 @@ editor_options:
 ---
 
 # imlplots: interpretable machine learning plots
- `imlplots ` is an R package that provide an interactive Shiny dashboard for three kinds of Interpretable Machine Learning (IML) plots
+`imlplots ` is an R package that provide an interactive Shiny dashboard for three kinds of Interpretable Machine Learning (IML) plots
  
 * Partial Dependence Plots (PDP)
 * Individual Conditional Expectation (ICE) plots
@@ -24,16 +24,17 @@ opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
 set.seed(42)
 load("../data/boston.rda")
 load("../data/fire.rda")
+load("../data/titanic.rda")
 library(mlr)
 library(png)
 library(grid)
 ```
 
 # Installation 
-The package can be installed directly from github with devtools:
+The package can be installed directly from github with devtools
 ```{r iml package, eval=TRUE, results='hide'}
 # install.packages("devtools")
-# devtools::install_github('juliafried/imlplots')
+devtools::install_github('juliafried/imlplots')
 library(imlplots)
 ```
 
@@ -174,18 +175,25 @@ As described above, you can select between `Regular` and `Centered` ICE plots.
 knitr::include_graphics('pictures/settings4.PNG')
 ```
 
+The ALE plot can be selected, too.
+Please keep in mind, that the ALE plot has a different y-axis than the PDP and ICE plot.
+
+```{r echo=FALSE, out.width='100%'}
+knitr::include_graphics('pictures/settings5.PNG')
+```
+
 The third tab `Plots` shows the IML plot in full screen via the sub-tab `Zoomed plot`.
 The sub-tab `Scatterplot` shows the filtered and unfiltered scatterplot between the `variable of interest` and the `target` variable of the model.
 
 In the `Data` tab we filtered for a high value of burned area and selected three individual observations.
 
-```{r echo=FALSE, out.width='100%'}
+```{r echo=FALSE, out.width='80%'}
 knitr::include_graphics('pictures/plots1.PNG')
 ```
 
 The filtered data scatterplot shows the selected high area values and also the three individual observations (in red).
 
-```{r echo=FALSE, out.width='100%'}
+```{r echo=FALSE, out.width='80%'}
 knitr::include_graphics('pictures/plots2.PNG')
 ```
 
@@ -210,10 +218,34 @@ fire.models = list(fire.rf, fire.lm, fire.glm)
 imlplots(data = fire, task = fire.task, models = fire.models)
 ```
 
-
 ## IML Plots for Classification Tasks
 
 For the classification example only the differences to the regression example will be explained.
+We use the titanic data set from [kaggle](https://www.kaggle.com/c/titanic) for this example.
+
+Again we create a task. This time we only fit one random forest. Afterwards we open the app.
+```{r, eval=FALSE}
+titanic.task = makeClassifTask(data = titanic, target = "Survived")
+titanic.rf = train("classif.randomForest", titanic.task)
+imlplots(data = titanic, task = titanic.task, titanic.rf)
+```
+
+This time it is useful to select `plotly` in the `Select graphics package` dropdown.
+
+```{r echo=FALSE, out.width='100%'}
+knitr::include_graphics('pictures/settings6.PNG')
+```
+
+This allows you to deselect single classes to increase the visability of individual lines, which is very useful for ICE plot.
+
+```{r echo=FALSE, out.width='80%'}
+knitr::include_graphics('pictures/settings7.PNG')
+```
+
+```{r echo=FALSE, out.width='80%'}
+knitr::include_graphics('pictures/settings8.PNG')
+```
+
 
 # References
 

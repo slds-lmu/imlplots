@@ -22,7 +22,7 @@ library(mlr)
 ```
 
 # Installation 
-The package can be installed directly from github with devtools:
+The package can be installed directly from github with devtools
 ```{r, results = 'hide', eval = FALSE}
 # install.packages("devtools")
 devtools::install_github('juliafried/imlplots')
