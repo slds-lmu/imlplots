@@ -15,7 +15,7 @@ The package can be installed directly from github with devtools:
 
 ``` r
 # install.packages("devtools")
-# devtools::install_github('juliafried/imlplots')
+devtools::install_github('juliafried/imlplots')
 library(imlplots)
 ```
 
@@ -92,7 +92,7 @@ imlplots(data = boston, task = boston.task, models = mod.list)
 Further Examples
 ----------------
 
-\[Vignette\]{<https://github.com/juliafried/imlplots/blob/master/vignettes/imlplots_Tutorial.html>}
+-   Check out our [Wiki](https://github.com/juliafried/imlplots/wiki)
 
 References
 ==========
