@@ -15,13 +15,15 @@ output: github_document
 library(knitr)
 opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
 set.seed(42)
+load("data/boston.rda")
+library(mlr)
 ```
 
 # Installation 
 The package can be installed directly from github with devtools:
 ```{r, results = 'hide', eval = FALSE}
 # install.packages("devtools")
-devtools::install_github('juliafried/imlplots')
+# devtools::install_github('juliafried/imlplots')
 library(imlplots)
 ```
 
@@ -31,8 +33,7 @@ You can fit classification and regression problems from the `mlr` package and an
 
 For quickstart we take the popular Boston Housing data, where we want to predict the median housing price in Boston.
 ```{r}
-library(MASS)
-data(Boston)
+head(boston)
 ```
 
 For using `imlplots` Shiny dashboard, three input arguments need to be specified
@@ -44,24 +45,23 @@ For using `imlplots` Shiny dashboard, three input arguments need to be specified
 We create a regression task with `medv` as target variable.
 The task structure is determined by `mlr` package.
 ```{r}
-library(mlr)
-boston.task = makeRegrTask(data = Boston, target = "medv")
+boston.task = makeRegrTask(data = boston, target = "medv")
 ```
 
 The `imlplots` dashboard allows the comparison of multiple learning algorithms, therefore we fit two different models - first a random forest and second a SVM.
 ```{r}
 rf.mod = train("regr.randomForest", boston.task)
-svm.mod = train("regr.ksvm", boston.task)
+glm.mod = train("regr.glm", boston.task)
 ```
 
 The input for the Shiny app is a list of learners.
 ```{r}
-mod.list = list(rf.mod, svm.mod)
+mod.list = list(rf.mod, glm.mod)
 ```
 
 Now the Shiny app can be used.
 ```{r, eval=FALSE}
-imlplots(data = Boston, task = boston.task, models = mod.list)
+imlplots(data = boston, task = boston.task, models = mod.list)
 ```
 
 # References
