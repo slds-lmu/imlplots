@@ -117,43 +117,28 @@ regrAlePlot = function(data, model, target, var, knots) {
   }
   
   aleplot_obj <- createAlePlot(data = data,
-                               target = target,
-                               model = model,
-                               var = var)
-  if (length(var) == 1){
-      ale_df = data.frame(x = aleplot_obj$x.values, y = aleplot_obj$f.values)
-      plot = ggplot(data = ale_df,
-                    aes_string(x = "x",
-                               y = "y")
-                    ) +
-        geom_line(size = 1, color = "steelblue") +
-        labs(y = paste("ALE main effect of", var, "on", target), x = var) +
-        theme_pubr()
-        
-      if (knots >= 40) {
-        plot = plot +
-          geom_point(size = 1, color = "steelblue")
-      } else {}
-        return(plot)
+    target = target,
+    model = model,
+    var = var)
+  if (is.factor(data[[var]]){
+    ale_df = data.frame(x = aleplot_obj$x.values, y = aleplot_obj$f.values)
+    plot = ggplot(data = ale_df,
+      aes_string(x = "x",
+        y = "y")
+    ) +
+      geom_bar(stat="identity", fill="steelblue") +
+      labs(y = paste("ALE main effect of", var, "on", target), x = var) +
+      theme_pubr()
+    
+    return(plot)
   } else {
-    #Produce data frame to produce ggplot
-    #df.3 is f.values the conture coordinates
-    df.3 = as.vector(ALE.DATA$f.values)
-    #df.1 are the x values
-    df.1 = rep(ALE.DATA$x.values[[1]], ncol(ALE.DATA$f.values))
-    #df.2 are y values
-    df.2 = vector(length = ncol(ALE.DATA$f.values)*nrow(ALE.DATA$f.values))
-    for(i in 1:length(ALE.DATA$x.values[[2]])){
-      df.2[(1 + (i-1)*
-              nrow(ALE.DATA$f.values)):(nrow(ALE.DATA$f.values)*i)]<- rep(
-                ALE.DATA$x.values[[2]][i], nrow(ALE.DATA$f.values))
-    }
-    #produce data frame
-    df <- data.frame(df.1, df.2, df.3)
-    #plot
-    ggplot(data = df, mapping = aes(x = df.1, y = df.2, z = df.3)) +
-      geom_contour(aes(colour = ..level..)) +
-      labs(y =  var[2], x = var[1]) +
+    ale_df = data.frame(x = aleplot_obj$x.values, y = aleplot_obj$f.values)
+    plot = ggplot(data = ale_df,
+      aes_string(x = "x",
+        y = "y")
+    ) +
+      geom_line(size = 1, color = "steelblue") +
+      labs(y = paste("ALE main effect of", var, "on", target), x = var) +
       theme_pubr()
   }
 }
