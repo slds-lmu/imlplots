@@ -13,8 +13,6 @@
 #' @note
 #' You need to install the GitHub version of ggplot2 to run the Shiny App
 #' successfully: devtools::install_github('hadley/ggplot2')
-#' If this version is not installed the plots are not displayed correctly
-#' for less than 30 knots.
 #' @export
 
 imlplots = function(data, task, models) {
