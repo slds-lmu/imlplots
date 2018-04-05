@@ -101,46 +101,40 @@ regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
 }
 
 regrAlePlot = function(data, model, target, var, knots) {
-  AlePlot.invisible <- function(){
-    ff <- tempfile()
-    png(filename=ff)
-    pred = function(X.model, newdata) as.numeric(predict(X.model, newdata))
-    res <- ALEPlot(data[,-which(names(data) == target)], model,
-                   pred.fun = pred, J=var)
-    dev.off()
-    unlink(ff)
-    res
-  }
-  ALE.DATA <- AlePlot.invisible()
-  #If target is of dimension 1
-  if (length(var) == 1){
-    #less than 40 knots
-    if (knots <= 40) {
-      #produce data frame
-      df = data.frame(ALE.DATA$x.values, ALE.DATA$f.values)
-      #plot
-      ggplot() +
-        geom_line(data = df, aes_string(x = "ALE.DATA.x.values",
-                                        y = "ALE.DATA.f.values"), color = "steelblue",
-                  size = 1)  +
-        geom_point(data = df, aes_string(x = "ALE.DATA.x.values",
-                                         y = "ALE.DATA.f.values"), color = "steelblue",
-                   size = 1) +
-        labs(y = paste("ALE main effect for", var, "on", target), x = var) +
-        theme_pubr()
-      #more than 40 knots
-    } else {
-      #produce data frame
-      df = data.frame(ALE.DATA$x.values, ALE.DATA$f.values)
-      #plot
-      ggplot() +
-        geom_line(data = df, aes_string(x = "ALE.DATA.x.values",
-                                        y = "ALE.DATA.f.values"), color = "steelblue",
-                  size = 1)  +
-        labs(y = paste("ALE main effect for", var, "on", target), x = var) +
-        theme_pubr()
+  
+  createAlePlot <- function(data, target, model, var) {
+    pred_function = function(X.model, newdata) {
+      as.numeric(predict(X.model, newdata))
     }
-    #if var is of dimension 2
+    obj <- ALEPlot::ALEPlot(
+      data[ , -which(names(data) == target)],
+      model,
+      pred.fun = pred_function,
+      J = var,
+      K = knots
+    )
+    return(obj)
+  }
+  
+  aleplot_obj <- createAlePlot(data = data,
+                               target = target,
+                               model = model,
+                               var = var)
+  if (length(var) == 1){
+      ale_df = data.frame(x = aleplot_obj$x.values, y = aleplot_obj$f.values)
+      plot = ggplot(data = ale_df,
+                    aes_string(x = "x",
+                               y = "y")
+                    ) +
+        geom_line(size = 1, color = "steelblue") +
+        labs(y = paste("ALE main effect of", var, "on", target), x = var) +
+        theme_pubr()
+        
+      if (knots >= 40) {
+        plot = plot +
+          geom_point(size = 1, color = "steelblue")
+      } else {}
+        return(plot)
   } else {
     #Produce data frame to produce ggplot
     #df.3 is f.values the conture coordinates
