@@ -8,8 +8,8 @@
 #'
 #' @format A data frame with 517 rows and 11 columns:
 #' \describe{
-#' \item{\code{month}}{month of the year: "jan" to "dec"}
-#' \item{\code{day}}{day of the week: "mon" to "sun"}
+#' \item{\code{month}}{month of the year: "1" (Jan) to "12" (Dec)}
+#' \item{\code{day}}{day of the week: "1" (Mon) to "7" (Sun)}
 #' \item{\code{FFMC}}{FFMC index from the FWI system: 18.7 to 96.20}
 #' \item{\code{DMC}}{DMC index from the FWI system: 1.1 to 291.3}
 #' \item{\code{DC}}{DC index from the FWI system: 7.9 to 860.6}

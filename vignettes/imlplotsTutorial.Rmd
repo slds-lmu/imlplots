@@ -1,0 +1,223 @@
+---
+title: "Vignette Title"
+author: "Julia Fried, Tobias Riebe, Christian Scholbeck"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
+---
+
+# imlplots: interpretable machine learning plots
+ `imlplots ` is an R package that provide an interactive Shiny dashboard for three kinds of Interpretable Machine Learning (IML) plots
+ 
+* Partial Dependence Plots (PDP)
+* Individual Conditional Expectation (ICE) plots
+* Accumulated Local Effect (ALE) plots
+
+```{r global_options, include=FALSE}
+library(knitr)
+opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+set.seed(42)
+load("../data/boston.rda")
+load("../data/fire.rda")
+library(mlr)
+library(png)
+library(grid)
+```
+
+# Installation 
+The package can be installed directly from github with devtools:
+```{r iml package, eval=TRUE, results='hide'}
+# install.packages("devtools")
+# devtools::install_github('juliafried/imlplots')
+library(imlplots)
+```
+
+# Quickstart
+You can fit classification and regression problems from the `mlr` package and analyse possible interaction effects in the Shiny dasbhoard.
+
+For quickstart we take the popular Boston Housing data, where we want to predict the median housing price in Boston.
+```{r head boston}
+head(boston)
+```
+
+For using `imlplots` Shiny dashboard, three input arguments need to be specified
+
+* `data` - the input data
+* `task`- the learning task
+* `models` - one or several trained models
+
+We create a regression task with `medv` as target variable.
+The task structure is determined by `mlr` package.
+```{r}
+boston.task = makeRegrTask(data = boston, target = "medv")
+```
+
+The `imlplots` dashboard allows the comparison of multiple learning algorithms, therefore we fit two different models - first a random forest and second a SVM.
+```{r mod boston}
+rf.mod = train("regr.randomForest", boston.task)
+glm.mod = train("regr.glm", boston.task)
+```
+
+The input for the Shiny app is a list of learners.
+```{r mod list boston}
+mod.list = list(rf.mod, glm.mod)
+```
+
+Now the Shiny app can be used.
+```{r boston imlplots, eval=FALSE}
+imlplots(data = boston, task = boston.task, models = mod.list)
+```
+
+## Code for Copy & Paset
+```{r, eval=FALSE}
+boston.task = makeRegrTask(data = boston, target = "medv")
+
+rf.mod = train("regr.randomForest", boston.task)
+glm.mod = train("regr.glm", boston.task)
+
+mod.list = list(rf.mod, glm.mod)
+
+imlplots(data = boston, task = boston.task, models = mod.list)
+```
+
+
+# Further Examples
+
+## IML Plots for Regression Tasks
+To show how you can use the `imlplots` Shiny app for regression tasks we use fire data, where the burned area of forests due to fires should be analyzed. 
+
+```{r head fire}
+head(fire)
+```
+
+The target variable is `area`, which is between 0.00 and 1090.84 ha.
+```{r summary fire}
+summary(fire$area)
+```
+
+We create a regression task with target variable `area`.
+```{r task fire}
+fire.task = makeRegrTask(data = fire, target = "area")
+```
+
+Next we train some `mlr` models and create a list of models.
+Note: The order in your model list will determine the model order in the Shiny dashboard.
+```{r models fire}
+fire.rf = train("regr.randomForest", fire.task)
+fire.glm = train("regr.glm", fire.task)
+
+fire.models = list(fire.rf, fire.glm)
+```
+
+No we can open the `imlplots` Shiny app.
+```{r imlplots fire, eval=FALSE}
+imlplots(data = fire, task = fire.task, models = fire.models)
+```
+
+The Shiny dashboard contains four tabs
+
+* Data
+* Settings
+* Plots
+* Learner Summary
+
+The `Data` tab shows your used input data. This data is taken to generate IML plots.
+If you want to check how changes in the data effect your plot, you can simply filter in the `Data` tab.
+
+```{r echo=FALSE, out.width='100%'}
+knitr::include_graphics('pictures/data.PNG')
+```
+
+For filtering two options are given
+
+1. Plot all sampled observations: In this setting you can filter via the filters beneath the column titles and all rows will be used for plotting.
+2. Plot indiviudal observations: In this setting after using the filters, you have to manually select specific rows.
+
+The next tab `Settings` contains all possible plot settings and the selected IML plot.
+
+```{r echo=FALSE, out.width='100%'}
+knitr::include_graphics('pictures/settings1.PNG')
+```
+
+There are various settings
+
+1. `Select graphics package`: You can select the graphics package - we offer `ggplot2` and `plotly`. Use `ggplot2` if your computer is not the fastest one.
+2. `Choose predictive model`: Choose one of your fitted models. The order in the dropdown is the order of your list.
+3. `Choose plot type`: We offer PDP, ICE and ALE plots
+If you select ICE plot, you will get a new selection field. Possible are `centered` and `regular` ICE plots
+4. `Variable of interest`: This dropdown will determine the x-axis of your plot
+
+On the right side of the dashboard page, the selected plot is shown.
+
+To check out effects, you can turn on `Select adjustable features`. This option allows you to set one of the variables to a specifc value.
+
+```{r echo=FALSE, out.width='100%'}
+knitr::include_graphics('pictures/settings2.PNG')
+```
+
+It is also possible to change the number of knots and lines (individual observations) with the shown sliders.
+
+The ICE plot contains all sampled, individual observations in blue. The red line is from PDP.
+
+```{r echo=FALSE, out.width='100%'}
+knitr::include_graphics('pictures/settings3.PNG')
+```
+
+As described above, you can select between `Regular` and `Centered` ICE plots.
+
+```{r echo=FALSE, out.width='100%'}
+knitr::include_graphics('pictures/settings4.PNG')
+```
+
+The third tab `Plots` shows the IML plot in full screen via the sub-tab `Zoomed plot`.
+The sub-tab `Scatterplot` shows the filtered and unfiltered scatterplot between the `variable of interest` and the `target` variable of the model.
+
+In the `Data` tab we filtered for a high value of burned area and selected three individual observations.
+
+```{r echo=FALSE, out.width='100%'}
+knitr::include_graphics('pictures/plots1.PNG')
+```
+
+The filtered data scatterplot shows the selected high area values and also the three individual observations (in red).
+
+```{r echo=FALSE, out.width='100%'}
+knitr::include_graphics('pictures/plots2.PNG')
+```
+
+The unfiltered data scatterplot shows all data points and also the three individual observations (in red).
+
+The fourth tab `Learner summary` shows the currently selected learner summary. If you want to see another summary, you have to select another model in the `Settings` tab.
+
+```{r echo=FALSE, out.width='100%'}
+knitr::include_graphics('pictures/learner1.PNG')
+```
+
+### Code for Copy & Paste
+```{r, eval=FALSE}
+fire.task = makeRegrTask(data = fire, target = "area")
+
+fire.rf = train("regr.randomForest", fire.task)
+fire.lm = train("regr.lm", fire.task)
+fire.glm = train("regr.glm", fire.task)
+
+fire.models = list(fire.rf, fire.lm, fire.glm)
+
+imlplots(data = fire, task = fire.task, models = fire.models)
+```
+
+
+## IML Plots for Classification Tasks
+
+For the classification example only the differences to the regression example will be explained.
+
+# References
+
+* [PDP and ICE plots](https://arxiv.org/pdf/1309.6392.pdf)
+* [mmpf R package](https://github.com/zmjones/mmpf)
+* [ALE plots](https://arxiv.org/abs/1612.08468)
+* [ALE R package](https://cran.r-project.org/web/packages/ALEPlot/index.html)

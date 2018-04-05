@@ -89,6 +89,11 @@ mod.list = list(rf.mod, glm.mod)
 imlplots(data = boston, task = boston.task, models = mod.list)
 ```
 
+Further Examples
+----------------
+
+\[Vignette\]{<https://github.com/juliafried/imlplots/blob/master/vignettes/imlplots_Tutorial.html>}
+
 References
 ==========
 
