@@ -100,9 +100,9 @@ regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
   return(plot)
 }
 
-regrAlePlot = function(data, model, target, var, knots) {
-  
-  createAlePlot <- function(data, target, model, var) {
+regrAlePlot = function(data, model, target, var, knots, surface_plot = FALSE) {
+
+  createAlePlot <- function(data, target, model, var, knots) {
     pred_function = function(X.model, newdata) {
       as.numeric(predict(X.model, newdata))
     }
@@ -116,45 +116,90 @@ regrAlePlot = function(data, model, target, var, knots) {
     return(obj)
   }
   
-  aleplot_obj <- createAlePlot(data = data,
-                               target = target,
-                               model = model,
-                               var = var)
-  if (length(var) == 1){
+  aleplot_obj <- tryCatch({
+    createAlePlot(data = data,
+                  target = target,
+                  model = model,
+                  var = var,
+                  knots = knots)},
+    error = function(e) return(e),
+    warning = function(w) return(w)
+  )
+  # ALEPlot package does not yet reliably support second order interactions
+  if (any(class(aleplot_obj) == "warning") |
+      any(class(aleplot_obj) == "error")) {
+    ggplot() +
+      annotate(geom = "text",
+               x = 1, y = 1,
+               label = "ALEPlot function returned an error or warning message.
+               You might have selected a factor (like) variable.
+               Second order effect ALE plots are not yet supported for factor (like) variables.",
+               size = 5
+      ) +
+      theme_pubr()
+  } else {
+    
+    if (length(var) == 1) {
       ale_df = data.frame(x = aleplot_obj$x.values, y = aleplot_obj$f.values)
       plot = ggplot(data = ale_df,
                     aes_string(x = "x",
                                y = "y")
-                    ) +
+      ) +
         geom_line(size = 1, color = "steelblue") +
         labs(y = paste("ALE main effect of", var, "on", target), x = var) +
         theme_pubr()
-        
+      
       if (knots >= 40) {
         plot = plot +
           geom_point(size = 1, color = "steelblue")
       } else {}
-        return(plot)
-  } else {
-    #Produce data frame to produce ggplot
-    #df.3 is f.values the conture coordinates
-    df.3 = as.vector(ALE.DATA$f.values)
-    #df.1 are the x values
-    df.1 = rep(ALE.DATA$x.values[[1]], ncol(ALE.DATA$f.values))
-    #df.2 are y values
-    df.2 = vector(length = ncol(ALE.DATA$f.values)*nrow(ALE.DATA$f.values))
-    for(i in 1:length(ALE.DATA$x.values[[2]])){
-      df.2[(1 + (i-1)*
-              nrow(ALE.DATA$f.values)):(nrow(ALE.DATA$f.values)*i)]<- rep(
-                ALE.DATA$x.values[[2]][i], nrow(ALE.DATA$f.values))
+      return(plot)
+      
+    } else if (length(var) == 2) {
+      x = aleplot_obj$x.values
+      y = aleplot_obj$f.values
+      x1 = x[[1]]
+      x2 = x[[2]]
+      rownames(y) = x1
+      colnames(y) = x2
+      
+      if (surface_plot == FALSE) {
+        df = melt(y, na.rm = TRUE)
+        colnames(df) = c(var[[1]], var[[2]], "value")
+        
+        ggplot(data = df, aes_string(x = var[[1]], y = var[[2]], color = "value")) +
+          stat_summary_2d(aes(z = value), fun = mean, bins = 50) +
+          theme_pubr()
+      } else if (surface_plot == TRUE) {
+        plot_ly(x = x1, y = x2, z = y, type = "surface") %>%
+        layout(scene = list(
+          xaxis = list(title = var[[1]]),
+          yaxis = list(title = var[[2]]),
+          zaxis = list(title = paste("ALE effect on", target)))  
+        )
+      }
     }
-    #produce data frame
-    df <- data.frame(df.1, df.2, df.3)
-    #plot
-    ggplot(data = df, mapping = aes(x = df.1, y = df.2, z = df.3)) +
-      geom_contour(aes(colour = ..level..)) +
-      labs(y =  var[2], x = var[1]) +
-      theme_pubr()
+      
+    # #Produce data frame to produce ggplot
+    # #df.3 is f.values the conture coordinates
+    # df.3 = as.vector(ALE.DATA$f.values)
+    # #df.1 are the x values
+    # df.1 = rep(ALE.DATA$x.values[[1]], ncol(ALE.DATA$f.values))
+    # #df.2 are y values
+    # df.2 = vector(length = ncol(ALE.DATA$f.values)*nrow(ALE.DATA$f.values))
+    # for(i in 1:length(ALE.DATA$x.values[[2]])){
+    #   df.2[(1 + (i-1)*
+    #           nrow(ALE.DATA$f.values)):(nrow(ALE.DATA$f.values)*i)]<- rep(
+    #             ALE.DATA$x.values[[2]][i], nrow(ALE.DATA$f.values))
+    # }
+    # #produce data frame
+    # df <- data.frame(df.1, df.2, df.3)
+    # #plot
+    # ggplot(data = df, mapping = aes(x = df.1, y = df.2, z = df.3)) +
+    #   geom_contour(aes(colour = ..level..)) +
+    #   labs(y =  var[2], x = var[1]) +
+    #   theme_pubr()
+    
   }
 }
 
@@ -172,6 +217,16 @@ scatterPlot <- function(data, target, var, highlighted) {
     geom_point(size = pointsize, color = "steelblue", shape = 1) +
     geom_point(data = data[which(rownames(data) %in% highlighted), ], shape = 19, color = "brown", size = 3) +
     theme_pubr()
+}
+
+scatterPlot3D <- function(data, target, var) {
+  plot_ly(data, x = ~get(var[[1]]), y = ~get(var[[2]]), z = ~get(target),
+                     marker = list(size = 1.5)) %>%
+    add_markers() %>%
+    layout(scene = list(xaxis = list(title = var[[1]]),
+                        yaxis = list(title = var[[2]]),
+                        zaxis = list(title = target))
+    )
 }
 
 placeholderPlot <- function() {

@@ -154,12 +154,28 @@ imlplots = function(data, task, models) {
                         & input.iceplot_mode == 'Centered'",
                       uiOutput("iceplot_center")
                     ),
-
+                    conditionalPanel(
+                      condition =
+                        "input.plot_type == 'Accumulated Local Effects'",
+                      selectInput(
+                        "aleplot_mode", "ALE Plot Mode",
+                        choices = c("Main Effects",
+                                    "Second Order Effects"
+                        ),
+                        selected = "ALE Main Effects"
+                      )
+                    ),
+                    
                     selectInput(
                       "var", "Variable of interest",
                       choices = features,
                       selected = NULL, multiple = FALSE),
-
+                    conditionalPanel(
+                      condition =
+                        "input.plot_type == 'Accumulated Local Effects' & input.aleplot_mode == 'Second Order Effects'",
+                      uiOutput("ale_interaction")
+                    ),
+                    
                     # You can change the values of variables to check
                     # how a specif value of a variable changes the output plot
                     uiOutput("checkbox"),
@@ -285,6 +301,7 @@ imlplots = function(data, task, models) {
         selected$gfx_package <- "ggplot2"
       } else if (input$gfx_package == "plotly (resource intensive)") {
         selected$gfx_package <- "plotly"
+        dev.off()
       }
     })
 
@@ -314,6 +331,32 @@ imlplots = function(data, task, models) {
       )
     })
 
+    output$ale_interaction = renderUI({
+      var_options = features[!features %in% c(plot.settings$var)]
+      selectInput("ale_interaction_var",
+                  "ALE interaction variable",
+                  choices = var_options)
+    })
+
+    observeEvent({
+      input$ale_interaction_var
+      input$aleplot_mode
+      selected$gfx_package}
+      , {
+      if (selected$plot == "ale" &&
+          input$aleplot_mode == "Second Order Effects") {
+        plot.settings$ale_interact = input$ale_interaction_var
+        
+        if (selected$gfx_package == "plotly") {
+          selected$surface_plot = TRUE
+        } else {
+          selected$surface_plot = FALSE
+        }
+        
+      } else {
+        plot.settings$ale_interact = NULL
+      }
+    })
     observeEvent(input$var, {
       df$values_adj = data
     })
@@ -375,8 +418,12 @@ imlplots = function(data, task, models) {
 
     # adjusts available features for modification based on the selected variable
     # of interest
-    observeEvent(plot.settings$var, {
-      df$features = names(data)[!names(data) %in% c(target, plot.settings$var)]
+    observeEvent({
+      plot.settings$var
+      plot.settings$ale_interact}
+      , {
+      df$features = names(data)[!names(data) %in% c(target, plot.settings$var,
+                                                    plot.settings$ale_interact)]
     })
 
     selected = reactiveValues()
@@ -756,23 +803,45 @@ imlplots = function(data, task, models) {
 
     scatterPlotUnfiltered <- eventReactive({
       df$table_rows_selected
-      plot.settings$var}
+      selected$plot
+      selected$aleplot_mode
+      plot.settings$var
+      plot.settings$ale_interact}
       , {
-        scatterPlot(data = data, target = target,
-          var = plot.settings$var,
-          highlighted = df$table_rows_selected
-        )
+        if (selected$plot == "ale" &&
+            input$aleplot_mode == "Second Order Effects" &&
+            selected$gfx_package == "plotly") {
+          ScatterPlot3D(data = data, target = target, var = c(
+            plot.settings$var, plot.settings$ale_interact)
+          )
+        } else {
+          scatterPlot(data = data, target = target,
+                      var = plot.settings$var,
+                      highlighted = df$table_rows_selected
+          )
+        }
       })
-
+    
     scatterPlotFiltered <- eventReactive({
       df$values_filtered
       df$table_rows_selected
-      plot.settings$var}
+      selected$plot
+      selected$aleplot_mode
+      plot.settings$var
+      plot.settings$ale_interact}
       , {
-        scatterPlot(data = df$values_filtered, target = target,
-          var = plot.settings$var,
-          highlighted = df$table_rows_selected
-        )
+        if (selected$plot == "ale" &&
+            input$aleplot_mode == "Second Order Effects" &&
+            selected$gfx_package == "plotly") {
+          scatterPlot3D(data = df$values_filtered, target = target, var = c(
+            plot.settings$var, plot.settings$ale_interact)
+          )
+        } else {
+          scatterPlot(data = df$values_filtered, target = target,
+                      var = plot.settings$var,
+                      highlighted = df$table_rows_selected
+          )
+        }
       })
 
     output$iml_plotly_plot <- renderPlotly({
@@ -808,6 +877,7 @@ imlplots = function(data, task, models) {
       selected$plot
       selected$iceplot_centerpoint
       plot.settings$var
+      plot.settings$ale_interact
       plot.settings$knots
       plot.settings$lines}
       , {
@@ -857,9 +927,10 @@ imlplots = function(data, task, models) {
                   plot <- regrAlePlot(
                     data = df$values_filtered,
                     model = selected$model,
-                    var = plot.settings$var,
+                    var = c(plot.settings$var, plot.settings$ale_interact),
                     target = target,
-                    knots = plot.settings$knots
+                    knots = plot.settings$knots,
+                    surface_plot = selected$surface_plot
                   )
                   return(plot)
                 }
