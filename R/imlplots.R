@@ -301,7 +301,6 @@ imlplots = function(data, task, models) {
         selected$gfx_package <- "ggplot2"
       } else if (input$gfx_package == "plotly (resource intensive)") {
         selected$gfx_package <- "plotly"
-        dev.off()
       }
     })
 
@@ -811,7 +810,7 @@ imlplots = function(data, task, models) {
         if (selected$plot == "ale" &&
             input$aleplot_mode == "Second Order Effects" &&
             selected$gfx_package == "plotly") {
-          ScatterPlot3D(data = data, target = target, var = c(
+          scatterPlot3D(data = data, target = target, var = c(
             plot.settings$var, plot.settings$ale_interact)
           )
         } else {
