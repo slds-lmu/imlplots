@@ -164,12 +164,20 @@ regrAlePlot = function(data, model, target, var, knots, surface_plot = FALSE) {
       colnames(y) = x2
       
       if (surface_plot == FALSE) {
-        df = melt(y, na.rm = TRUE)
-        colnames(df) = c(var[[1]], var[[2]], "value")
-        
-        ggplot(data = df, aes_string(x = var[[1]], y = var[[2]], color = "value")) +
-          stat_summary_2d(aes(z = value), fun = mean, bins = 50) +
-          theme_pubr()
+       
+        heat_cols = colorRampPalette(c("white", "steelblue"))
+        image(x1, x2, y, col = heat_cols(12),
+              xlim = range(x1), 
+              ylim = range(x2),
+              xlab = var[[1]],
+              ylab = var[[2]]
+        )
+        contour(x1, x2, y, add = TRUE, col = "brown", lwd = 2, labcex = 1.5)
+        # df = melt(y, na.rm = TRUE)
+        # colnames(df) = c(var[[1]], var[[2]], "value")
+        # ggplot(data = df, aes_string(x = var[[1]], y = var[[2]], color = "value")) +
+        #   stat_summary_2d(aes(z = value), fun = mean, bins = 50) +
+        #   theme_pubr()
       } else if (surface_plot == TRUE) {
         plot_ly(x = x1, y = x2, z = y, type = "surface") %>%
         layout(scene = list(

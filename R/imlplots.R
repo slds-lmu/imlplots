@@ -344,19 +344,25 @@ imlplots = function(data, task, models) {
       selected$gfx_package}
       , {
       if (selected$plot == "ale" &&
-          input$aleplot_mode == "Second Order Effects") {
-        plot.settings$ale_interact = input$ale_interaction_var
+          input$aleplot_mode == "Second Order Effects" &&
+          selected$gfx_package == "ggplot2") {
         
-        if (selected$gfx_package == "plotly") {
-          selected$surface_plot = TRUE
-        } else {
+          plot.settings$ale_interact = input$ale_interaction_var
           selected$surface_plot = FALSE
-        }
+          
+      } else if (selected$plot == "ale" &&
+                 input$aleplot_mode == "Second Order Effects" &&
+                 selected$gfx_package == "plotly") {
         
+        plot.settings$ale_interact = input$ale_interaction_var
+        selected$surface_plot = TRUE
+     
       } else {
         plot.settings$ale_interact = NULL
+        selected$surface_plot = FALSE
       }
     })
+    
     observeEvent(input$var, {
       df$values_adj = data
     })
@@ -876,6 +882,7 @@ imlplots = function(data, task, models) {
       input$select_lines
       selected$plot
       selected$iceplot_centerpoint
+      selected$surface_plot
       plot.settings$var
       plot.settings$ale_interact
       plot.settings$knots
