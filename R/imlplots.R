@@ -30,7 +30,6 @@ imlplots = function(data, task, models) {
   #' Models with the same learner need to have an unique ID
   #' Unique ID's can be given via the makeLearner function
   #' E.g. makeLearner("regr.randomForest", id = "ownId")
-
   learner.models.names = lapply(models, function(x) x[["learner"]][["id"]])
 
   # Next target and type are extracted from the task description
@@ -339,27 +338,25 @@ imlplots = function(data, task, models) {
 
     observeEvent({
       input$ale_interaction_var
-      selected$plot
+      selected$plot 
       input$aleplot_mode
       selected$gfx_package}
       , {
+        
       if (selected$plot == "ale" &&
           input$aleplot_mode == "Second Order Effects" &&
           selected$gfx_package == "ggplot2") {
         
           plot.settings$ale_interact = input$ale_interaction_var
-          selected$surface_plot = FALSE
           
       } else if (selected$plot == "ale" &&
                  input$aleplot_mode == "Second Order Effects" &&
                  selected$gfx_package == "plotly") {
         
         plot.settings$ale_interact = input$ale_interaction_var
-        selected$surface_plot = TRUE
      
       } else {
         plot.settings$ale_interact = NULL
-        selected$surface_plot = FALSE
       }
     })
     
@@ -377,6 +374,7 @@ imlplots = function(data, task, models) {
           selected$plot = "pdp"
         } else if (plot.settings$type == "Accumulated Local Effects") {
           selected$plot = "ale"
+          shinyjs::disable("lines")
         }
       })
 
@@ -411,13 +409,15 @@ imlplots = function(data, task, models) {
       input$knots
       input$lines
       input$modifdata
-      input$plot_type}
+      input$plot_type
+      input$aleplot_mode}
       , {
         plot.settings$var = input$var
         plot.settings$knots = input$knots
         plot.settings$lines = input$lines
         plot.settings$modifdata = input$modifdata
         plot.settings$type = input$plot_type
+        selected$aleplot_mode = input$aleplot_mode
       })
 
     # captures values of fixed slider for plotting the vertical line
@@ -811,20 +811,27 @@ imlplots = function(data, task, models) {
       df$table_rows_selected
       selected$plot
       selected$aleplot_mode
+      selected$gfx_package
       plot.settings$var
       plot.settings$ale_interact}
       , {
         if (selected$plot == "ale" &&
-            input$aleplot_mode == "Second Order Effects" &&
+            selected$aleplot_mode == "Second Order Effects" &&
             selected$gfx_package == "plotly") {
-          scatterPlot3D(data = data, target = target, var = c(
-            plot.settings$var, plot.settings$ale_interact)
+
+          scatterPlot3D(
+            data = data, target = target,
+            var = c(plot.settings$var, plot.settings$ale_interact),
+            highlighted = df$table_rows_selected
           )
         } else {
-          scatterPlot(data = data, target = target,
-                      var = plot.settings$var,
-                      highlighted = df$table_rows_selected
+
+          scatterPlot(
+            data = data, target = target,
+            var = plot.settings$var,
+            highlighted = df$table_rows_selected
           )
+          
         }
       })
     
@@ -833,19 +840,23 @@ imlplots = function(data, task, models) {
       df$table_rows_selected
       selected$plot
       selected$aleplot_mode
+      selected$gfx_package
       plot.settings$var
       plot.settings$ale_interact}
       , {
         if (selected$plot == "ale" &&
-            input$aleplot_mode == "Second Order Effects" &&
+            selected$aleplot_mode == "Second Order Effects" &&
             selected$gfx_package == "plotly") {
-          scatterPlot3D(data = df$values_filtered, target = target, var = c(
-            plot.settings$var, plot.settings$ale_interact)
+          scatterPlot3D(
+            data = df$values_filtered, target = target,
+            var = c(plot.settings$var, plot.settings$ale_interact),
+            highlighted = df$table_rows_selected
           )
         } else {
-          scatterPlot(data = df$values_filtered, target = target,
-                      var = plot.settings$var,
-                      highlighted = df$table_rows_selected
+          scatterPlot(
+            data = df$values_filtered, target = target,
+            var = plot.settings$var,
+            highlighted = df$table_rows_selected
           )
         }
       })
@@ -882,7 +893,7 @@ imlplots = function(data, task, models) {
       input$select_lines
       selected$plot
       selected$iceplot_centerpoint
-      selected$surface_plot
+      selected$gfx_package
       plot.settings$var
       plot.settings$ale_interact
       plot.settings$knots
@@ -937,7 +948,7 @@ imlplots = function(data, task, models) {
                     var = c(plot.settings$var, plot.settings$ale_interact),
                     target = target,
                     knots = plot.settings$knots,
-                    surface_plot = selected$surface_plot
+                    gfx_package = selected$gfx_package
                   )
                   return(plot)
                 }

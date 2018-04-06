@@ -100,28 +100,34 @@ regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
   return(plot)
 }
 
-regrAlePlot = function(data, model, target, var, knots, surface_plot = FALSE) {
-
-  createAlePlot <- function(data, target, model, var, knots) {
-    pred_function = function(X.model, newdata) {
-      as.numeric(predict(X.model, newdata))
-    }
-    obj <- ALEPlot::ALEPlot(
-      data[ , -which(names(data) == target)],
-      model,
-      pred.fun = pred_function,
-      J = var,
-      K = knots
-    )
-    return(obj)
+createRawAlePlot <- function(data, target, model, var, knots) {
+  pred_function = function(X.model, newdata) {
+    as.numeric(predict(X.model, newdata))
   }
+  # tmp = tempfile()
+  # png(tmp)
   
+  obj <- ALEPlot::ALEPlot(
+    data[ , -which(names(data) == target)],
+    model,
+    pred.fun = pred_function,
+    J = var,
+    K = knots
+  )
+  # file.remove(tmp)
+  return(obj)
+}
+
+regrAlePlot = function(data, model, target, var, knots, gfx_package) {
+  Sys.sleep(1)
+  # give function time until all reactive variables are updated correctly
   aleplot_obj <- tryCatch({
-    createAlePlot(data = data,
-                  target = target,
-                  model = model,
-                  var = var,
-                  knots = knots)},
+    createRawAlePlot(
+      data = data,
+      target = target,
+      model = model,
+      var = var,
+      knots = knots)},
     error = function(e) return(e),
     warning = function(w) return(w)
   )
@@ -131,9 +137,11 @@ regrAlePlot = function(data, model, target, var, knots, surface_plot = FALSE) {
     ggplot() +
       annotate(geom = "text",
                x = 1, y = 1,
-               label = "ALEPlot function returned an error or warning message.
-               You might have selected a factor (like) variable.
-               Second order effect ALE plots are not yet supported for factor (like) variables.",
+               label = paste(
+                 "ALEPlot function returned error or warning message: \n",
+                 aleplot_obj,
+                 "You might have selected a factor (like) variable.
+                 Second order effect ALE plots are not yet reliably supported for factor (like) variables."),
                size = 5
       ) +
       theme_pubr()
@@ -163,28 +171,31 @@ regrAlePlot = function(data, model, target, var, knots, surface_plot = FALSE) {
       rownames(y) = x1
       colnames(y) = x2
       
-      if (surface_plot == FALSE) {
+      if (gfx_package == "ggplot2") {
        
-        heat_cols = colorRampPalette(c("white", "steelblue"))
-        image(x1, x2, y, col = heat_cols(12),
-              xlim = range(x1), 
-              ylim = range(x2),
-              xlab = var[[1]],
-              ylab = var[[2]]
-        )
-        contour(x1, x2, y, add = TRUE, col = "brown", lwd = 2, labcex = 1.5)
-        # df = melt(y, na.rm = TRUE)
-        # colnames(df) = c(var[[1]], var[[2]], "value")
-        # ggplot(data = df, aes_string(x = var[[1]], y = var[[2]], color = "value")) +
-        #   stat_summary_2d(aes(z = value), fun = mean, bins = 50) +
-        #   theme_pubr()
-      } else if (surface_plot == TRUE) {
-        plot_ly(x = x1, y = x2, z = y, type = "surface") %>%
+        # heat_cols = colorRampPalette(c("white", "steelblue"))
+        # image(x1, x2, y, col = heat_cols(12),
+        #       xlim = range(x1), 
+        #       ylim = range(x2),
+        #       xlab = var[[1]],
+        #       ylab = var[[2]]
+        # )
+        # contour(x1, x2, y, add = TRUE, col = "brown", lwd = 2, labcex = 1.5)
+        # plot = recordPlot()
+        # return(plot)
+        df = melt(y, na.rm = TRUE)
+        colnames(df) = c(var[[1]], var[[2]], "value")
+        ggplot(data = df, aes_string(x = var[[1]], y = var[[2]], color = "value")) +
+          stat_summary_2d(aes(z = value), fun = mean, bins = 50) +
+          theme_pubr()
+      } else if (gfx_package == "plotly") {
+        plot = plot_ly(x = x1, y = x2, z = y, type = "surface") %>%
         layout(scene = list(
           xaxis = list(title = var[[1]]),
           yaxis = list(title = var[[2]]),
           zaxis = list(title = paste("ALE effect on", target)))  
         )
+        return(plot)
       }
     }
       
@@ -221,20 +232,28 @@ scatterPlot <- function(data, target, var, highlighted) {
   } else {
     pointsize = 0.6
   }
-  ggplot(data = data, aes_string(y = target, x = var)) +
+  plot = ggplot(data = data, aes_string(y = target, x = var)) +
     geom_point(size = pointsize, color = "steelblue", shape = 1) +
     geom_point(data = data[which(rownames(data) %in% highlighted), ], shape = 19, color = "brown", size = 3) +
     theme_pubr()
+  return(plot)
 }
 
-scatterPlot3D <- function(data, target, var) {
-  plot_ly(data, x = ~get(var[[1]]), y = ~get(var[[2]]), z = ~get(target),
-                     marker = list(size = 1.5)) %>%
-    add_markers() %>%
+scatterPlot3D <- function(data, target, var, highlighted = NULL) {
+  p = plot_ly(x = ~get(var[[1]]), y = ~get(var[[2]]), z = ~get(target)) %>%
+    add_markers(data = data, marker = list(size = 1.5)) %>%
     layout(scene = list(xaxis = list(title = var[[1]]),
                         yaxis = list(title = var[[2]]),
                         zaxis = list(title = target))
     )
+  if (!is.null(highlighted)) {
+    p = p %>%
+      add_markers(data = data[highlighted, ],
+                  marker = list(size = 3, color = "brown"))
+    return(p)
+  } else {
+    return(p)
+  }
 }
 
 placeholderPlot <- function() {
