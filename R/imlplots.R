@@ -339,6 +339,7 @@ imlplots = function(data, task, models) {
 
     observeEvent({
       input$ale_interaction_var
+      selected$plot
       input$aleplot_mode
       selected$gfx_package}
       , {
