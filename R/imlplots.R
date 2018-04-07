@@ -91,13 +91,8 @@ imlplots = function(data, task, models) {
         tabBox(
           width = 12,
           height = NULL,
-
-          # >> Data ----
-          # In the first tab you can view the input data
-          # Also you can filter the data set, filtering will also change
-          # the IML plots
-
           tabPanel(title = "Data", {
+            # data table with filters
             fluidRow(
               column(
                 width = 12,
@@ -105,7 +100,6 @@ imlplots = function(data, task, models) {
                   width = NULL,
                   status = "primary",
                   title = "Data used for plotting ICE curves",
-                  # shows the data set
                   selectInput("select_lines",
                     "Select observations to sample from",
                     choices = c(
@@ -113,7 +107,6 @@ imlplots = function(data, task, models) {
                       "Plot individual observations"
                     )
                   ),
-                  # Data table
                   div(style = "overflow-x: scroll",
                     DT::dataTableOutput("table")
                   )
@@ -121,21 +114,16 @@ imlplots = function(data, task, models) {
               )
             )
           }),
-
-          # >> Plot ----
-          # In this tab the 3 plots are shown
           tabPanel(
+            # plot settings and preview
             title = "Settings", {
               fluidRow(
-                # Plot and plot characteristics
-                # This is the left column where you can change the plot
-                # settings, e.g. select the plot type
                 column(
                   width = 3,
+                  # left column with plot settings
                   box(
                     title = "Plot settings",
                     width = NULL,
-                    # Select one model out of your list of models
                     selectInput("gfx_package", "Select graphics package",
                       choices = c("ggplot2",
                         "plotly (resource intensive)"
@@ -144,9 +132,6 @@ imlplots = function(data, task, models) {
                     selectInput("models", "Choose predictive model",
                       choices = learner.models.names,
                       selected = 1, multiple = FALSE),
-
-                    # 3 different plots can be selected
-                    # The plot code is in another file: visualizations.R
                     selectInput(
                       "plot_type",
                       "Choose plot type",
@@ -155,11 +140,6 @@ imlplots = function(data, task, models) {
                         "Partial Dependence",
                         "Accumulated Local Effects"),
                       selected = 1, multiple = FALSE),
-
-                    # Select the variable of interest for the x-axis of the plot
-                    # one variable for PDP and ICE plot
-                    # max. 2 variables for ALE plot
-
                     conditionalPanel(
                       condition =
                         "input.plot_type == 'Individual Conditional Expectation'",
@@ -188,7 +168,6 @@ imlplots = function(data, task, models) {
                         selected = "ALE Main Effects"
                       )
                     ),
-
                     selectInput(
                       "var", "Variable of interest",
                       choices = features,
@@ -198,34 +177,20 @@ imlplots = function(data, task, models) {
                         "input.plot_type == 'Accumulated Local Effects' & input.aleplot_mode == 'Second Order Effects'",
                       uiOutput("ale_interaction")
                     ),
-
-                    # You can change the values of variables to check
-                    # how a specif value of a variable changes the output plot
-                    uiOutput("checkbox"),
-
-                    # Select how many knots are shown in the plot
+                    uiOutput("checkbox"), # checkbox for adjusting the data
                     uiOutput("knots"),
-
-                    # Possibility to filter for less lines in the plot
                     uiOutput("lines")
                   ),
                   box(
-                    # If one (or more) variables are selected in the checkbox
-                    # the value of the variable(s) can be fixed to a value.
-                    # This value can be changed via a slider to check how
-                    # this change influences the output
                     title = "Adjust feature values",
                     width = NULL,
                     uiOutput("sliders"),
                     uiOutput("selectors")
                   )
                 ),
-
-                # Plot
-                # The plot is always visible, e.g. if the user scrolls down
-                # the plot follows
                 column(
                   width = 9,
+                  # right column with plot preview
                   fluidRow(
                     style = "position:fixed; width:70%;",
                     uiOutput("plot")
@@ -233,9 +198,6 @@ imlplots = function(data, task, models) {
                 )
               )}
           ),
-
-          # >> Zoomed Plot ----
-          # In the last tab you can review the plot in full width
           tabPanel(
             title = "Plots",
             tabsetPanel(
@@ -272,7 +234,6 @@ imlplots = function(data, task, models) {
               )
             )
           ),
-          # >> Learner Summary ----
           tabPanel(
             title = "Learner Summary",
             fluidRow(
@@ -354,7 +315,7 @@ imlplots = function(data, task, models) {
     })
 
     output$ale_interaction = renderUI({
-      var_options = features[!features %in% c(plot.settings$var)]
+      var_options = features[!features %in% c(selected$var)]
       selectInput("ale_interaction_var",
                   "ALE interaction variable",
                   choices = var_options)
@@ -371,16 +332,16 @@ imlplots = function(data, task, models) {
           input$aleplot_mode == "Second Order Effects" &&
           selected$gfx_package == "ggplot2") {
 
-          plot.settings$ale_interact = input$ale_interaction_var
+          selected$ale_interact = input$ale_interaction_var
 
       } else if (selected$plot == "ale" &&
                  input$aleplot_mode == "Second Order Effects" &&
                  selected$gfx_package == "plotly") {
 
-        plot.settings$ale_interact = input$ale_interaction_var
+        selected$ale_interact = input$ale_interaction_var
 
       } else {
-        plot.settings$ale_interact = NULL
+        selected$ale_interact = NULL
       }
     })
 
@@ -390,13 +351,13 @@ imlplots = function(data, task, models) {
 
     # Adjusts internal variable for plot type based on selected string in UI
     observeEvent({
-      plot.settings$type}
+      selected$type}
       , {
-        if (plot.settings$type == "Individual Conditional Expectation") {
+        if (selected$type == "Individual Conditional Expectation") {
           selected$plot = "ice"
-        } else if (plot.settings$type == "Partial Dependence") {
+        } else if (selected$type == "Partial Dependence") {
           selected$plot = "pdp"
-        } else if (plot.settings$type == "Accumulated Local Effects") {
+        } else if (selected$type == "Accumulated Local Effects") {
           selected$plot = "ale"
           shinyjs::disable("lines")
         }
@@ -425,7 +386,7 @@ imlplots = function(data, task, models) {
       })
 
     # Reactive values for plot settings
-    plot.settings = reactiveValues(knots = 30, lines = 30)
+    selected = reactiveValues(knots = 30, lines = 30)
 
     # Transfers input plot settings from UI to reactive values
     observeEvent({
@@ -436,11 +397,11 @@ imlplots = function(data, task, models) {
       input$plot_type
       input$aleplot_mode}
       , {
-        plot.settings$var = input$var
-        plot.settings$knots = input$knots
-        plot.settings$lines = input$lines
-        plot.settings$modifdata = input$modifdata
-        plot.settings$type = input$plot_type
+        selected$var = input$var
+        selected$knots = input$knots
+        selected$lines = input$lines
+        selected$modifdata = input$modifdata
+        selected$type = input$plot_type
         selected$aleplot_mode = input$aleplot_mode
       })
 
@@ -449,14 +410,12 @@ imlplots = function(data, task, models) {
     # adjusts available features for modification based on the selected variable
     # of interest
     observeEvent({
-      plot.settings$var
-      plot.settings$ale_interact}
+      selected$var
+      selected$ale_interact}
       , {
-      df$features = names(data)[!names(data) %in% c(target, plot.settings$var,
-                                                    plot.settings$ale_interact)]
+      df$features = names(data)[!names(data) %in% c(target, selected$var,
+                                                    selected$ale_interact)]
     })
-
-    selected = reactiveValues()
 
     # capture slider and selector values
     # set reactive values to NULL if input contains NA or NULL values
@@ -597,10 +556,10 @@ imlplots = function(data, task, models) {
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
     output$knots <- renderUI({
-      if (is.null(plot.settings$knots)) {
-        plot.settings$knots = 30
+      if (is.null(selected$knots)) {
+        selected$knots = 30
       }
-      # setting to 30 upon initialization; setting init value in plot.settings
+      # setting to 30 upon initialization; setting init value in selected
       # does not work
       if (selected$plot == "ale") {
         sliderInput(
@@ -608,7 +567,7 @@ imlplots = function(data, task, models) {
           "Number of intervals into which the predictor range is divided",
           min = 1,
           max = 500,
-          value = plot.settings$knots,
+          value = selected$knots,
           step = 1)
       } else {
       sliderInput(
@@ -616,16 +575,16 @@ imlplots = function(data, task, models) {
         "Number of knots for each line",
         min = 1,
         max = nrow(df$values_filtered),
-        value = plot.settings$knots,
+        value = selected$knots,
         step = 1)
       }
     })
 
     output$lines <- renderUI({
-      if (is.null(plot.settings$lines)) {
-        plot.settings$lines = 30
+      if (is.null(selected$lines)) {
+        selected$lines = 30
       }
-      # setting to 30 upon initialization; setting init value in plot.settings
+      # setting to 30 upon initialization; setting init value in selected
       # does not work
 
       sliderInput(
@@ -633,7 +592,7 @@ imlplots = function(data, task, models) {
         "Number of individual observations (lines) to sample from data",
         min = 1,
         max = nrow(df$values_filtered),
-        value = plot.settings$lines,
+        value = selected$lines,
         step = 1)
     })
 
@@ -711,88 +670,113 @@ imlplots = function(data, task, models) {
       selected$iceplot_mode
       selected$model
       selected$plot
-      plot.settings$var
-      plot.settings$ale_interact
-      plot.settings$knots
-      plot.settings$lines
+      selected$var
+      selected$ale_interact
+      selected$knots
+      selected$lines
     }
       , {
         req(!(TRUE %in% apply(df$values_filtered, MARGIN = 2,
                               function(column) {NA %in% column})))
         req(nrow(df$values_filtered) > 0)
-        shiny::withProgress(
-          message = "Calculating predictions..",
-          detail = "Please wait.",
-          min = 0,
-          max = 100,
-          value = 100,
-          {
-            if (selected$plot == "ale") {
-              # use aleplot function for ale predictions
-              df$pred <- makePredictionsAle(
-                  data = df$values_filtered,
-                  target = target,
-                  model = selected$model,
-                  var1 = plot.settings$var,
-                  var2 = plot.settings$ale_interact,
-                  knots = plot.settings$knots)
-            } else if (!selected$plot == "ale") {
-              # use marginal prediction function for ice and pdp predictions
-              req(nrow(df$values_filtered) >= plot.settings$knots)
-              req(nrow(df$values_filtered) >= plot.settings$lines)
-              if (input$select_lines == "Plot all sampled observations") {
+
+        if (selected$plot == "ale") {
+          # use ALEPlot::ALEPlot(..) to predict for ale
+          shiny::withProgress(
+            message = "Calculating Predictions..",
+            detail = "Please wait.",
+            min = 0, max = 100, value = 100,
+            {
+              df$pred = makePredictionsAle(
+                data = df$values_filtered,
+                target = target,
+                model = selected$model,
+                var1 = selected$var,
+                var2 = selected$ale_interact,
+                knots = selected$knots
+              )
+            }
+          )
+        } else {
+          # use mmpf::marginalPrediction(..) to predict for ice/pdp
+          req(nrow(df$values_filtered) >= selected$knots)
+          req(nrow(df$values_filtered) >= selected$lines)
+
+          if (input$select_lines == "Plot all sampled observations") {
+            # Sample selected$lines from df$values_filtered
+            shiny::withProgress(
+              message = "Calculating predictions..",
+              detail = "Please wait.",
+              min = 0, max = 100, value = 100,
+              {
                 prediction <- makePredictionsSampled(
                   data = df$values_filtered,
-                  var = plot.settings$var,
+                  var = selected$var,
                   model = selected$model,
-                  knots = plot.settings$knots,
-                  lines = plot.settings$lines,
+                  knots = selected$knots,
+                  lines = selected$lines,
                   type = type
                 )
-                if (selected$iceplot_mode == "Centered") {
-                  # req(input$iceplot_centerpoint %in% prediction[, 1, with = FALSE])
-                  req(!is.null(selected$iceplot_centerpoint))
-                  req(plot.settings$var %in% names(prediction))
-
-
-                  df$pred <- centerPredictions(
-                    predictions = prediction,
-                    centerpoint = selected$iceplot_centerpoint,
-                    var = plot.settings$var
-                  )
-                } else if (selected$iceplot_mode == "Regular") {
-                  df$pred <- prediction
-                }
-              } else if (input$select_lines == "Plot individual observations") {
-                shinyjs::disable("lines")
-
-                req(!is.null(df$table_rows_selected))
-                req(df$table_rows_selected %in% as.numeric(row.names(df$values_filtered)))
-
-                prediction <- makePredictionsSelected(
-                  data = df$values_filtered,
-                  var = plot.settings$var,
-                  model = selected$model,
-                  knots = plot.settings$knots,
-                  selected_rows = df$table_rows_selected,
-                  type = type
-                )
-                if (selected$iceplot_mode == "Centered") {
-                  req(!is.null(selected$iceplot_centerpoint))
-                  req(plot.settings$var %in% names(prediction))
-                  df$pred <- centerPredictions(
-                    predictions = prediction,
-                    centerpoint = selected$iceplot_centerpoint,
-                    var = plot.settings$var
-                  )
-
-                } else if (selected$iceplot_mode == "Regular") {
-                  df$pred <- prediction
-                }
               }
+            )
+            if (selected$iceplot_mode == "Centered") {
+              # req(input$iceplot_centerpoint %in% prediction[, 1, with = FALSE])
+              req(!is.null(selected$iceplot_centerpoint))
+              req(selected$var %in% names(prediction))
+
+              shiny::withProgress(
+                message = "Centering predictions..",
+                detail = "Please wait.",
+                min = 0, max = 100, value = 100,
+                {
+                  df$pred <- centerPredictions(
+                    predictions = prediction,
+                    centerpoint = selected$iceplot_centerpoint,
+                    var = selected$var
+                  )
+                }
+              )
+            } else if (selected$iceplot_mode == "Regular") {
+              df$pred <- prediction
             }
-          }) # ending withProgress(...)
-      }) # ending observeEvent({...})
+          } else if (input$select_lines == "Plot individual observations") {
+            # mmpf::marginalPrediction(...) marginalizes only over selected
+            # observations
+            shinyjs::disable("lines")
+
+            req(!is.null(df$table_rows_selected))
+            req(df$table_rows_selected %in% as.numeric(row.names(df$values_filtered)))
+
+            prediction <- makePredictionsSelected(
+              data = df$values_filtered,
+              var = selected$var,
+              model = selected$model,
+              knots = selected$knots,
+              selected_rows = df$table_rows_selected,
+              type = type
+            )
+            if (selected$iceplot_mode == "Centered") {
+              req(!is.null(selected$iceplot_centerpoint))
+              req(selected$var %in% names(prediction))
+
+              shiny::withProgress(
+                message = "Centering predictions..",
+                detail = "Please wait.",
+                min = 0, max = 100, value = 100,
+                {
+                  df$pred <- centerPredictions(
+                    predictions = prediction,
+                    centerpoint = selected$iceplot_centerpoint,
+                    var = selected$var
+                  )
+                }
+              )
+            } else if (selected$iceplot_mode == "Regular") {
+              df$pred <- prediction
+            }
+          }
+        }
+      })
 
     output$scatter_unfiltered_basic = renderPlot({
       scatterPlotUnfiltered()},
@@ -844,8 +828,8 @@ imlplots = function(data, task, models) {
       selected$plot
       selected$aleplot_mode
       selected$gfx_package
-      plot.settings$var
-      plot.settings$ale_interact}
+      selected$var
+      selected$ale_interact}
       , {
         if (selected$plot == "ale" &&
             selected$aleplot_mode == "Second Order Effects" &&
@@ -853,14 +837,14 @@ imlplots = function(data, task, models) {
 
           scatterPlot3D(
             data = data, target = target,
-            var = c(plot.settings$var, plot.settings$ale_interact),
+            var = c(selected$var, selected$ale_interact),
             highlighted = df$table_rows_selected
           )
         } else {
 
           scatterPlot(
             data = data, target = target,
-            var = plot.settings$var,
+            var = selected$var,
             highlighted = df$table_rows_selected
           )
 
@@ -873,21 +857,21 @@ imlplots = function(data, task, models) {
       selected$plot
       selected$aleplot_mode
       selected$gfx_package
-      plot.settings$var
-      plot.settings$ale_interact}
+      selected$var
+      selected$ale_interact}
       , {
         if (selected$plot == "ale" &&
             selected$aleplot_mode == "Second Order Effects" &&
             selected$gfx_package == "plotly") {
           scatterPlot3D(
             data = df$values_filtered, target = target,
-            var = c(plot.settings$var, plot.settings$ale_interact),
+            var = c(selected$var, selected$ale_interact),
             highlighted = df$table_rows_selected
           )
         } else {
           scatterPlot(
             data = df$values_filtered, target = target,
-            var = plot.settings$var,
+            var = selected$var,
             highlighted = df$table_rows_selected
           )
         }
@@ -917,9 +901,9 @@ imlplots = function(data, task, models) {
       }
     })
 
-    # plots the predicted values by calling predefined plot functions with
-    # current reactive values
     imlPlot = eventReactive(ignoreInit = FALSE, ignoreNULL = FALSE, {
+      # plots the predicted values by calling predefined plot functions with
+      # current reactive values
       df$pred
       df$values_filtered
       df$table_rows_selected
@@ -928,16 +912,16 @@ imlplots = function(data, task, models) {
       selected$plot
       selected$iceplot_centerpoint
       selected$gfx_package
-      plot.settings$var
-      plot.settings$ale_interact
-      plot.settings$knots
-      plot.settings$lines}
+      selected$var
+      selected$ale_interact
+      selected$knots
+      selected$lines}
       , {
-        req(plot.settings$lines)
+        req(selected$lines)
         req(!is.null(df$pred))
         req(!(TRUE %in% apply(df$pred, MARGIN = 2,
           function(column) {NA %in% column})))
-        req(plot.settings$var %in% names(df$pred))
+        req(selected$var %in% names(df$pred))
 
         withProgress(
           message = "Rendering plot..",
@@ -958,10 +942,10 @@ imlplots = function(data, task, models) {
                 if (selected$plot == "ice") {
                   plot <- regrIcePlot(
                     pred = df$pred,
-                    var = plot.settings$var,
+                    var = selected$var,
                     target  = target,
-                    knots = plot.settings$knots,
-                    lines = plot.settings$lines,
+                    knots = selected$knots,
+                    lines = selected$lines,
                     centered = selected$centered,
                     centerpoint = selected$iceplot_centerpoint
                   )
@@ -969,9 +953,9 @@ imlplots = function(data, task, models) {
                 } else if (selected$plot == "pdp") {
                   plot <- regrPartialDependencePlot(
                     pred = df$pred,
-                    var = plot.settings$var,
+                    var = selected$var,
                     target = target,
-                    knots = plot.settings$knots
+                    knots = selected$knots
                   )
                   return(plot)
                 } else if (selected$plot == "ale") {
@@ -979,9 +963,9 @@ imlplots = function(data, task, models) {
                   plot <- regrAlePlot(
                     data = df$pred,
                     target = target,
-                    var1 = plot.settings$var,
-                    var2 = plot.settings$ale_interact,
-                    knots = plot.settings$knots,
+                    var1 = selected$var,
+                    var2 = selected$ale_interact,
+                    knots = selected$knots,
                     gfx_package = selected$gfx_package
                   )
                   return(plot)
@@ -991,9 +975,9 @@ imlplots = function(data, task, models) {
                 if (selected$plot == "ice") {
                   plot <- classifIcePlot(
                     pred = df$pred,
-                    var = plot.settings$var,
-                    knots = plot.settings$knots,
-                    lines = plot.settings$lines,
+                    var = selected$var,
+                    knots = selected$knots,
+                    lines = selected$lines,
                     centered = selected$centered,
                     centerpoint = selected$iceplot_centerpoint
                   )
@@ -1002,9 +986,9 @@ imlplots = function(data, task, models) {
 
                   plot <- classifPartialDependencePlot(
                     pred = df$pred,
-                    var = plot.settings$var,
+                    var = selected$var,
                     target = target,
-                    knots = plot.settings$knots
+                    knots = selected$knots
                   )
                   return(plot)
                 } # ending: selected$plot == "pdp
