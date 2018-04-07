@@ -1,6 +1,6 @@
 #' Interactive Plots for Interpretable Machine Learning
 #' @description
-#' The \code{imlplots()} function creates an interactive shiny based dashboard
+#' The function \code{imlplots()} creates an interactive shiny based dashboard
 #' for visualizing the effects of statistical models.
 #' The utilization of mlr (Machine Learning in R) is necessary.
 #' For more infos go to \url{https://github.com/mlr-org}
@@ -9,19 +9,22 @@
 #' Expectation (ICE) plots and Accumulated Local Effects (ALE) plots.
 #' @param data A data frame of the test data.
 #' Has to contain exactly the same variables as the training data.
-#' @param task The mlr task, e.g. iris.task = makeClassifTask(data = iris,
-#' target = "Species").
+#' @param task The mlr task the models were being trained on,
+#' e.g. iris.task = makeClassifTask(data = iris, target = "Species").
 #' Classification and regression tasks are supported.
 #' @param models A list of mlr trained models, e.g. list(rf.mod, glm.mod).
 #'
 #' You can provide differently tuned models of the same learner by assigning
 #' a unique ID to the learner, e.g.
 #' \code{makeLearner("regr.randomForest", id = "ownId")} \cr
-#'
-#' The function performs a basic check upon initialization,
-#' whether the provided models can be used to properly predict.
-
-#'
+#' 
+#' @examples
+#' library(mlr)
+#' tsk = makeRegrTask(data = boston, target = "medv")
+#' mod.rf = train("regr.randomForest", task = tsk)
+#' mod.svm = train("regr.svm", task = tsk)
+#' imlplots(boston, tsk, list(mod.rf, mod.svm))
+#' 
 #' @note
 #' The plots display combinations of different inputs and outputs/predictions.
 #' Therefore they are highly sensitive to the trained and provided models.
@@ -30,19 +33,31 @@
 #' variables are held constant. You can look at how the predictions change,
 #' if you had provided different test data, by either filtering/subsetting
 #' the data or manually setting a variable to a fixed value for all observations.
-
+#' 
+#' The function performs a basic check upon initialization,
+#' whether the provided models can be used to properly predict.
+#' If the check fails, it is recommended to manually test the model with the 
+#' \code{marginalPrediction()} function of the mmpf package.
+#' 
+#' @author Julia Fried, Tobias Riebe, Christian Scholbeck; in cooperation with
+#' the working group for computational statistics at
+#' Ludwigs-Maximilians-University Munich.
+#' 
 #' @references
-#' Goldstein et al. 2013. "Peeking Inside the Black Box:Visualizing Statistical Learning with Plots of
-#' Individual Conditional Expectation"
-#'
-#' Apley 2016. "Visualizing the Effects of Predictor Variables in Black Box Supervised
+#' 
+#' Apley (2016). "Visualizing the Effects of Predictor Variables in Black Box Supervised
 #' Learning Models"
-#'
-#' Friedman, J.H. 2001. “Greedy Function Approximation: A Gradient Boosting
-#' Machine.” Annals of Statistics 29: 1189–1232.
-#'
-#' Bischl et. al 2016. "mlr: Machine Learning in R." Journal of Machine Learning
+#' 
+#' Bischl et. al (2016). "mlr: Machine Learning in R." Journal of Machine Learning
 #' Research, 17(170), pp.
+#' 
+#' Friedman, J.H. (2001). “Greedy Function Approximation: A Gradient Boosting
+#' Machine.” Annals of Statistics 29: 1189–1232.
+#' 
+#' Goldstein et al. (2013). "Peeking Inside the Black Box: Visualizing Statistical Learning with Plots of
+#' Individual Conditional Expectation"
+#' 
+#' Jones (2017). "mmpf: Monte-Carlo Methods for Prediction Functions "The R Journal Vol. XX/YY, AAAA 20ZZ
 
 #' @export
 
@@ -69,7 +84,8 @@ imlplots = function(data, task, models) {
   do.call(modelCheck,
     list(data = data, models = models, var = sample(features, 1))
   )
-  # basic check if provided models throw error when using marginalPrediction(...)
+  # basic check whether provided models throw error when using
+  # marginalPrediction(...)
 
   # ~ User Interfache ~ ----
   app.ui = dashboardPage(
@@ -124,6 +140,7 @@ imlplots = function(data, task, models) {
                   box(
                     title = "Plot settings",
                     width = NULL,
+                    status = "primary",
                     selectInput("gfx_package", "Select graphics package",
                       choices = c("ggplot2",
                         "plotly (resource intensive)"
@@ -709,7 +726,7 @@ imlplots = function(data, task, models) {
               detail = "Please wait.",
               min = 0, max = 100, value = 100,
               {
-                prediction <- makePredictionsSampled(
+                prediction <- makePredictionsIceSampled(
                   data = df$values_filtered,
                   var = selected$var,
                   model = selected$model,
@@ -747,7 +764,7 @@ imlplots = function(data, task, models) {
             req(!is.null(df$table_rows_selected))
             req(df$table_rows_selected %in% as.numeric(row.names(df$values_filtered)))
 
-            prediction <- makePredictionsSelected(
+            prediction <- makePredictionsIceSelected(
               data = df$values_filtered,
               var = selected$var,
               model = selected$model,
@@ -970,7 +987,6 @@ imlplots = function(data, task, models) {
                   )
                   return(plot)
                 }
-                # classification
               } else if (type == "classif") {
                 if (selected$plot == "ice") {
                   plot <- classifIcePlot(
@@ -991,13 +1007,23 @@ imlplots = function(data, task, models) {
                     knots = selected$knots
                   )
                   return(plot)
-                } # ending: selected$plot == "pdp
-              } # ending: type = "classif"
-            } # ending: alternatives to placeholder plot
-          } # ending: with Progress function call
+                } else if (selected$plot == "ale") {
+                  
+                  plot <- classifAlePlot(
+                    data = df$pred,
+                    target = target,
+                    var1 = selected$var,
+                    var2 = selected$ale_interact,
+                    knots = selected$knots,
+                    gfx_package = selected$gfx_package
+                  )
+                  return(plot)
+                } 
+              } 
+            } 
+          } 
         ) # ending: withProgress(...)
-      }) # ending: observeEvent({...})
-
+      }) 
     output$zoomed_plotly_plot = renderPlotly({
       p <- plotly_build(imlPlot())
       p$elementId <- NULL

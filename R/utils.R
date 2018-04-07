@@ -1,15 +1,8 @@
-#' Model check function
-#' @description
-#' Some mlr learners, like \code{classif.lda} or \code{classif.qda}, can't be
-#' used in the marginalPrediction function from the \pkg{mmpf} package.
-#' This \code{modelCheck()} allows only the usage of models that work together
-#' with the \pkg{mmpf} package.
-#' @param data The input data for `marginalPrediction()`
-#' @param var The variables of data
-#' @param models One or several models that are checked from this function
-#' @note The main function is \code{imlplots(data, task, models)}, check out
-#' \code{?imlplots} for more information.
+
 modelCheck <- function(data, var, models) {
+  # provides a basic model check upon initialization, whether marginalPrediction
+  # can use each model to properly predict
+  # if a model cannot be used, the session will be stopped and a warning printed
   error_list <- lapply(models, FUN = function(mod) {
     tryCatch(
       {
