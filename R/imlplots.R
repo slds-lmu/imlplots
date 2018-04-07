@@ -1,20 +1,49 @@
-#' Create IML plots
+#' Interactive Plots for Interpretable Machine Learning
 #' @description
-#' With the imlplots() function an interactive Shiny Dashboard can be created. \cr
-#' Mandatory is the usage of the mlr package, for more infos go to
-#' \url{https://github.com/mlr-org} \cr
-#' Possible are classification or regression tasks.
-#' And three types of plots: Partial dependece plots (PDP), indiviudal conditional
-#' expectation (ICE) plots and accumulated local effects (ALE) plots
-#' @param data The data frame used for classification or regression model
+#' The \code{imlplots()} function creates an interactive shiny based dashboard
+#' for visualizing the effects of statistical models.
+#' The utilization of mlr (Machine Learning in R) is necessary.
+#' For more infos go to \url{https://github.com/mlr-org}
+#'
+#' There are three types of plots: Partial Dependence Plots (PDP), Individual Conditional
+#' Expectation (ICE) plots and Accumulated Local Effects (ALE) plots.
+#' @param data A data frame of the test data.
+#' Has to contain exactly the same variables as the training data.
 #' @param task The mlr task, e.g. iris.task = makeClassifTask(data = iris,
-#' target = "Species")
-#' @param models A list of mlr machine learning models, e.g. list(rf.mod, glm.mod)
+#' target = "Species").
+#' Classification and regression tasks are supported.
+#' @param models A list of mlr trained models, e.g. list(rf.mod, glm.mod).
+#'
+#' You can provide differently tuned models of the same learner by assigning
+#' a unique ID to the learner, e.g.
+#' \code{makeLearner("regr.randomForest", id = "ownId")} \cr
+#'
+#' The function performs a basic check upon initialization,
+#' whether the provided models can be used to properly predict.
+
+#'
 #' @note
-#' You need to install the GitHub version of ggplot2 to run the Shiny App
-#' successfully: devtools::install_github('hadley/ggplot2')
-#' If this version is not installed the plots are not displayed correctly
-#' for less than 30 knots.
+#' The plots display combinations of different inputs and outputs/predictions.
+#' Therefore they are highly sensitive to the trained and provided models.
+#'
+#' The variable of interest provides variations of different inputs, while all other
+#' variables are held constant. You can look at how the predictions change,
+#' if you had provided different test data, by either filtering/subsetting
+#' the data or manually setting a variable to a fixed value for all observations.
+
+#' @references
+#' Goldstein et al. 2013. "Peeking Inside the Black Box:Visualizing Statistical Learning with Plots of
+#' Individual Conditional Expectation"
+#'
+#' Apley 2016. "Visualizing the Effects of Predictor Variables in Black Box Supervised
+#' Learning Models"
+#'
+#' Friedman, J.H. 2001. “Greedy Function Approximation: A Gradient Boosting
+#' Machine.” Annals of Statistics 29: 1189–1232.
+#'
+#' Bischl et. al 2016. "mlr: Machine Learning in R." Journal of Machine Learning
+#' Research, 17(170), pp.
+
 #' @export
 
 imlplots = function(data, task, models) {
@@ -25,11 +54,6 @@ imlplots = function(data, task, models) {
   if (!(is.vector(models))) {models = list(models)}
 
   learner.models = lapply(models, function(x) x[["learner.model"]])
-
-  #' @note
-  #' Models with the same learner need to have an unique ID
-  #' Unique ID's can be given via the makeLearner function
-  #' E.g. makeLearner("regr.randomForest", id = "ownId")
   learner.models.names = lapply(models, function(x) x[["learner"]][["id"]])
 
   # Next target and type are extracted from the task description
@@ -164,7 +188,7 @@ imlplots = function(data, task, models) {
                         selected = "ALE Main Effects"
                       )
                     ),
-                    
+
                     selectInput(
                       "var", "Variable of interest",
                       choices = features,
@@ -174,7 +198,7 @@ imlplots = function(data, task, models) {
                         "input.plot_type == 'Accumulated Local Effects' & input.aleplot_mode == 'Second Order Effects'",
                       uiOutput("ale_interaction")
                     ),
-                    
+
                     # You can change the values of variables to check
                     # how a specif value of a variable changes the output plot
                     uiOutput("checkbox"),
@@ -338,28 +362,28 @@ imlplots = function(data, task, models) {
 
     observeEvent({
       input$ale_interaction_var
-      selected$plot 
+      selected$plot
       input$aleplot_mode
       selected$gfx_package}
-      , {
-        
+      , ignoreNULL = FALSE, {
+
       if (selected$plot == "ale" &&
           input$aleplot_mode == "Second Order Effects" &&
           selected$gfx_package == "ggplot2") {
-        
+
           plot.settings$ale_interact = input$ale_interaction_var
-          
+
       } else if (selected$plot == "ale" &&
                  input$aleplot_mode == "Second Order Effects" &&
                  selected$gfx_package == "plotly") {
-        
+
         plot.settings$ale_interact = input$ale_interaction_var
-     
+
       } else {
         plot.settings$ale_interact = NULL
       }
     })
-    
+
     observeEvent(input$var, {
       df$values_adj = data
     })
@@ -578,15 +602,23 @@ imlplots = function(data, task, models) {
       }
       # setting to 30 upon initialization; setting init value in plot.settings
       # does not work
-
+      if (selected$plot == "ale") {
+        sliderInput(
+          "knots",
+          "Number of intervals into which the predictor range is divided",
+          min = 1,
+          max = 500,
+          value = plot.settings$knots,
+          step = 1)
+      } else {
       sliderInput(
         "knots",
         "Number of knots for each line",
         min = 1,
         max = nrow(df$values_filtered),
         value = plot.settings$knots,
-        step = 1
-      )
+        step = 1)
+      }
     })
 
     output$lines <- renderUI({
@@ -678,88 +710,89 @@ imlplots = function(data, task, models) {
       input$iceplot_centerpoint
       selected$iceplot_mode
       selected$model
+      selected$plot
       plot.settings$var
+      plot.settings$ale_interact
       plot.settings$knots
       plot.settings$lines
     }
       , {
         req(!(TRUE %in% apply(df$values_filtered, MARGIN = 2,
-          function(column) {NA %in% column})))
+                              function(column) {NA %in% column})))
         req(nrow(df$values_filtered) > 0)
-        req(nrow(df$values_filtered) >= plot.settings$knots)
-        req(nrow(df$values_filtered) >= plot.settings$lines)
+        shiny::withProgress(
+          message = "Calculating predictions..",
+          detail = "Please wait.",
+          min = 0,
+          max = 100,
+          value = 100,
+          {
+            if (selected$plot == "ale") {
+              # use aleplot function for ale predictions
+              df$pred <- makePredictionsAle(
+                  data = df$values_filtered,
+                  target = target,
+                  model = selected$model,
+                  var1 = plot.settings$var,
+                  var2 = plot.settings$ale_interact,
+                  knots = plot.settings$knots)
+            } else if (!selected$plot == "ale") {
+              # use marginal prediction function for ice and pdp predictions
+              req(nrow(df$values_filtered) >= plot.settings$knots)
+              req(nrow(df$values_filtered) >= plot.settings$lines)
+              if (input$select_lines == "Plot all sampled observations") {
+                prediction <- makePredictionsSampled(
+                  data = df$values_filtered,
+                  var = plot.settings$var,
+                  model = selected$model,
+                  knots = plot.settings$knots,
+                  lines = plot.settings$lines,
+                  type = type
+                )
+                if (selected$iceplot_mode == "Centered") {
+                  # req(input$iceplot_centerpoint %in% prediction[, 1, with = FALSE])
+                  req(!is.null(selected$iceplot_centerpoint))
+                  req(plot.settings$var %in% names(prediction))
 
-        if (input$select_lines == "Plot all sampled observations") {
-          shiny::withProgress(
-            message = "Calculating predictions..",
-            detail = "Please wait.",
-            min = 0, max = 100, value = 100,
-            {
-              prediction <- makePredictionsSampled(
-                data = df$values_filtered,
-                var = plot.settings$var,
-                model = selected$model,
-                knots = plot.settings$knots,
-                lines = plot.settings$lines,
-                type = type
-              )
+
+                  df$pred <- centerPredictions(
+                    predictions = prediction,
+                    centerpoint = selected$iceplot_centerpoint,
+                    var = plot.settings$var
+                  )
+                } else if (selected$iceplot_mode == "Regular") {
+                  df$pred <- prediction
+                }
+              } else if (input$select_lines == "Plot individual observations") {
+                shinyjs::disable("lines")
+
+                req(!is.null(df$table_rows_selected))
+                req(df$table_rows_selected %in% as.numeric(row.names(df$values_filtered)))
+
+                prediction <- makePredictionsSelected(
+                  data = df$values_filtered,
+                  var = plot.settings$var,
+                  model = selected$model,
+                  knots = plot.settings$knots,
+                  selected_rows = df$table_rows_selected,
+                  type = type
+                )
+                if (selected$iceplot_mode == "Centered") {
+                  req(!is.null(selected$iceplot_centerpoint))
+                  req(plot.settings$var %in% names(prediction))
+                  df$pred <- centerPredictions(
+                    predictions = prediction,
+                    centerpoint = selected$iceplot_centerpoint,
+                    var = plot.settings$var
+                  )
+
+                } else if (selected$iceplot_mode == "Regular") {
+                  df$pred <- prediction
+                }
+              }
             }
-          )
-          if (selected$iceplot_mode == "Centered") {
-            # req(input$iceplot_centerpoint %in% prediction[, 1, with = FALSE])
-            req(!is.null(selected$iceplot_centerpoint))
-            req(plot.settings$var %in% names(prediction))
-
-            shiny::withProgress(
-              message = "Centering predictions..",
-              detail = "Please wait.",
-              min = 0, max = 100, value = 100,
-              {
-                df$pred <- centerPredictions(
-                  predictions = prediction,
-                  centerpoint = selected$iceplot_centerpoint,
-                  var = plot.settings$var
-                )
-              }
-            )
-          } else if (selected$iceplot_mode == "Regular") {
-            df$pred <- prediction
-          }
-        } else if (input$select_lines == "Plot individual observations") {
-          shinyjs::disable("lines")
-
-          req(!is.null(df$table_rows_selected))
-          req(df$table_rows_selected %in% as.numeric(row.names(df$values_filtered)))
-
-          prediction <- makePredictionsSelected(
-            data = df$values_filtered,
-            var = plot.settings$var,
-            model = selected$model,
-            knots = plot.settings$knots,
-            selected_rows = df$table_rows_selected,
-            type = type
-          )
-          if (selected$iceplot_mode == "Centered") {
-            req(!is.null(selected$iceplot_centerpoint))
-            req(plot.settings$var %in% names(prediction))
-
-            shiny::withProgress(
-              message = "Centering predictions..",
-              detail = "Please wait.",
-              min = 0, max = 100, value = 100,
-              {
-                df$pred <- centerPredictions(
-                  predictions = prediction,
-                  centerpoint = selected$iceplot_centerpoint,
-                  var = plot.settings$var
-                )
-              }
-            )
-          } else if (selected$iceplot_mode == "Regular") {
-            df$pred <- prediction
-          }
-        }
-      })
+          }) # ending withProgress(...)
+      }) # ending observeEvent({...})
 
     output$scatter_unfiltered_basic = renderPlot({
       scatterPlotUnfiltered()},
@@ -768,6 +801,7 @@ imlplots = function(data, task, models) {
     )
     output$scatter_unfiltered_plotly = renderPlotly({
       p <- plotly_build(scatterPlotUnfiltered())
+      p$elementId <- NULL
       p$x$layout$width <- 800
       p$x$layout$height <- 400
       p$width <- NULL
@@ -782,6 +816,7 @@ imlplots = function(data, task, models) {
     )
     output$scatter_filtered_plotly = renderPlotly({
       p <- plotly_build(scatterPlotFiltered())
+      p$elementId <- NULL
       p$x$layout$width <- 800
       p$x$layout$height <- 400
       p$width <- NULL
@@ -791,9 +826,7 @@ imlplots = function(data, task, models) {
 
     output$scatter_unfiltered <- renderUI({
       if (selected$gfx_package == "plotly") {
-        plotlyOutput("scatter_unfiltered_plotly",
-          width = "1200px",
-          height = "400px")
+        plotlyOutput("scatter_unfiltered_plotly")
       } else if (selected$gfx_package == "ggplot2") {
         plotOutput("scatter_unfiltered_basic")
       }
@@ -805,9 +838,8 @@ imlplots = function(data, task, models) {
         plotOutput("scatter_filtered_basic")
       }
     })
-    # output$scatterFiltered = renderPlotly(scatterPlotFiltered())
 
-    scatterPlotUnfiltered <- eventReactive({
+    scatterPlotUnfiltered <- eventReactive(ignoreNULL = FALSE, {
       df$table_rows_selected
       selected$plot
       selected$aleplot_mode
@@ -831,11 +863,11 @@ imlplots = function(data, task, models) {
             var = plot.settings$var,
             highlighted = df$table_rows_selected
           )
-          
+
         }
       })
-    
-    scatterPlotFiltered <- eventReactive({
+
+    scatterPlotFiltered <- eventReactive(ignoreNULL = FALSE, {
       df$values_filtered
       df$table_rows_selected
       selected$plot
@@ -863,6 +895,7 @@ imlplots = function(data, task, models) {
 
     output$iml_plotly_plot <- renderPlotly({
       p <- plotly_build(imlPlot())
+      p$elementId <- NULL
       p$x$layout$width <- 800
       p$x$layout$height <- 400
       p$width <- NULL
@@ -890,6 +923,7 @@ imlplots = function(data, task, models) {
       df$pred
       df$values_filtered
       df$table_rows_selected
+      df$pred_ale
       input$select_lines
       selected$plot
       selected$iceplot_centerpoint
@@ -904,7 +938,6 @@ imlplots = function(data, task, models) {
         req(!(TRUE %in% apply(df$pred, MARGIN = 2,
           function(column) {NA %in% column})))
         req(plot.settings$var %in% names(df$pred))
-
 
         withProgress(
           message = "Rendering plot..",
@@ -942,11 +975,12 @@ imlplots = function(data, task, models) {
                   )
                   return(plot)
                 } else if (selected$plot == "ale") {
+
                   plot <- regrAlePlot(
-                    data = df$values_filtered,
-                    model = selected$model,
-                    var = c(plot.settings$var, plot.settings$ale_interact),
+                    data = df$pred,
                     target = target,
+                    var1 = plot.settings$var,
+                    var2 = plot.settings$ale_interact,
                     knots = plot.settings$knots,
                     gfx_package = selected$gfx_package
                   )
@@ -980,10 +1014,9 @@ imlplots = function(data, task, models) {
         ) # ending: withProgress(...)
       }) # ending: observeEvent({...})
 
-    # >> Zoomed Plot ----
-    # render the plot function
     output$zoomed_plotly_plot = renderPlotly({
       p <- plotly_build(imlPlot())
+      p$elementId <- NULL
       p$x$layout$width <- 1200
       p$x$layout$height <- 600
       p$width <- NULL
@@ -1003,24 +1036,11 @@ imlplots = function(data, task, models) {
         plotOutput("zoomed_basic_plot")
       }
     })
-
-    # >> Learner Summary ----
-    # prints summary of selected model
     output$learner_summary = renderPrint({
       capture.output(selected$model)
     })
 
-    # outputOptions(output, "plot", suspendWhenHidden = FALSE)
-
-    # outs = outputOptions(output)
-    # lapply(names(outs), function(name) {
-    #   outputOptions(output, name, suspendWhenHidden = FALSE)
-    # })
-
   } # end server
 
-  # ~ Start the Shiny App ~ ----
   shinyApp(ui = app.ui, server = app.server)
-
-  #' @author Julia Fried, Tobias Riebe, Christian Scholbeck
 }

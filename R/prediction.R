@@ -99,3 +99,38 @@ centerPredictions <- function(predictions, centerpoint, var) {
   centered_pred = cbind(predictions[, var, with = FALSE, drop = FALSE], centered)
   return(centered_pred)
 }
+
+makePredictionsAle <- function(data, target, model, var1, var2 = NULL, knots) {
+  pred_function = function(X.model, newdata) {
+    as.numeric(predict(X.model, newdata))
+  }
+  obj <- tryCatch(
+    {ALEPlot::ALEPlot(
+    data[ , -which(names(data) == target)],
+    model,
+    pred.fun = pred_function,
+    J = c(var1, var2),
+    K = knots)},
+    error = function(e) return(e),
+    warning = function(w) return(w)
+  )
+  # ALEPlot function not (yet) completely reliable
+  if (any(class(obj) == "warning") | any(class(obj) == "error")) {
+    return(obj)
+  } else {
+    # no error or warning
+    if (is.null(var2)) {
+      df = data.frame(matrix(nrow = length(obj$x.values), ncol = 2))
+      colnames(df) = c(var1, "ale.effect")
+      df[[var1]] = obj$x.values
+      df[["ale.effect"]] = obj$f.values
+    } else {
+      df = obj$f.values
+      rownames(df) = obj$x.values[[1]]
+      colnames(df) = obj$x.values[[2]]
+      df = melt(df, na.rm = TRUE)
+      colnames(df) = c(var1, var2, "ale.effect")
+    }
+    return(df)
+  }
+}

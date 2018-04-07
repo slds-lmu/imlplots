@@ -53,10 +53,11 @@ classifPartialDependencePlot = function(pred, var, target, knots) {
 
 regrPartialDependencePlot = function(pred, var, target, knots) {
   ggplot() +
-    geom_line(data = pred,
-              aes_string(x = var, y = "preds.ave"),
-              color = "steelblue",
-              size = 1) +
+    geom_line(
+      data = pred,
+      aes_string(x = var, y = "preds.ave"),
+      color = "steelblue",
+      size = 1) +
     labs(y =  target) +
     theme_pubr()
   # }
@@ -80,16 +81,18 @@ regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
   iceplot.data = melt(pred, id.vars = var)
 
   plot <- ggplot() +
-    geom_line(data = iceplot.data,
-              aes_string(x = var, y = "value",
-                         group = "variable"),
-              color = "steelblue",
-              size = line.size,
-              alpha = line.alpha) +
-    geom_line(data = pred,
-              aes_string(x = var, y = "preds.ave"),
-              color = "brown",
-              size = 1) +
+    geom_line(
+      data = iceplot.data,
+      aes_string(
+        x = var, y = "value", group = "variable"),
+      color = "steelblue",
+      size = line.size,
+      alpha = line.alpha) +
+    geom_line(
+      data = pred,
+      aes_string(x = var, y = "preds.ave"),
+      color = "brown",
+      size = 1) +
     labs(y =  target) +
     theme_pubr()
   if (centered == TRUE) {
@@ -100,25 +103,62 @@ regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
   return(plot)
 }
 
-createRawAlePlot <- function(data, target, model, var, knots) {
-  pred_function = function(X.model, newdata) {
-    as.numeric(predict(X.model, newdata))
+
+regrAlePlot = function(data, target, var1, var2 = NULL, knots, gfx_package) {
+
+  if (any(class(data) == "warning") |
+      any(class(data) == "error")) {
+    ggplot() +
+      annotate(
+        geom = "text",
+        x = 1, y = 1,
+        label = paste(
+          "ALEPlot function returned error or warning message: \n",
+          data,
+          "You might have selected a factor (like) variable.
+          Second order effect ALE plots are not yet reliably supported for factor (like) variables."),
+        size = 5
+      ) +
+      theme_pubr()
+  } else {
+    # no error or warning
+    if (is.null(var2)) {
+      # line plot
+      plot = ggplot(
+        data = data,
+        aes_string(
+          x = var1,
+          y = "ale.effect")) +
+        geom_line(size = 1, color = "steelblue") +
+        labs(y = paste("ALE main effect on", target), x = var1) +
+        theme_pubr()
+    } else {
+      # two variables
+      if (gfx_package == "ggplot2") {
+        # 2d heat map
+        plot = ggplot(
+          data = data, aes_string(x = var1, y = var2, color = "ale.effect")) +
+          stat_summary_2d(aes(z = ale.effect), fun = mean, bins = 50) +
+          theme_pubr()
+      } else if (gfx_package == "plotly") {
+        # 3d scatter
+        df = acast(data, get(var1) ~ get(var2), value.var = "ale.effect", drop = FALSE)
+        x = as.numeric(rownames(df))
+        y = as.numeric(colnames(df))
+
+        plot = plot_ly(x = x, y = y, z = df, type = "surface") %>%
+        layout(scene = list(
+          xaxis = list(title = var1),
+          yaxis = list(title = var2),
+          zaxis = list(title = paste("ALE effect on", target)))
+        )
+      }
+    }
   }
-  # tmp = tempfile()
-  # png(tmp)
-  
-  obj <- ALEPlot::ALEPlot(
-    data[ , -which(names(data) == target)],
-    model,
-    pred.fun = pred_function,
-    J = var,
-    K = knots
-  )
-  # file.remove(tmp)
-  return(obj)
+  return(plot)
 }
 
-regrAlePlot = function(data, model, target, var, knots, gfx_package) {
+classifAlePlot = function(data, model, target, var, knots, gfx_package) {
   Sys.sleep(1)
   # give function time until all reactive variables are updated correctly
   aleplot_obj <- tryCatch({
@@ -143,10 +183,10 @@ regrAlePlot = function(data, model, target, var, knots, gfx_package) {
                  "You might have selected a factor (like) variable.
                  Second order effect ALE plots are not yet reliably supported for factor (like) variables."),
                size = 5
-      ) +
+               ) +
       theme_pubr()
   } else {
-    
+
     if (length(var) == 1) {
       ale_df = data.frame(x = aleplot_obj$x.values, y = aleplot_obj$f.values)
       plot = ggplot(data = ale_df,
@@ -156,13 +196,13 @@ regrAlePlot = function(data, model, target, var, knots, gfx_package) {
         geom_line(size = 1, color = "steelblue") +
         labs(y = paste("ALE main effect of", var, "on", target), x = var) +
         theme_pubr()
-      
+
       if (knots >= 40) {
         plot = plot +
           geom_point(size = 1, color = "steelblue")
       } else {}
       return(plot)
-      
+
     } else if (length(var) == 2) {
       x = aleplot_obj$x.values
       y = aleplot_obj$f.values
@@ -170,12 +210,11 @@ regrAlePlot = function(data, model, target, var, knots, gfx_package) {
       x2 = x[[2]]
       rownames(y) = x1
       colnames(y) = x2
-      
+
       if (gfx_package == "ggplot2") {
-       
         # heat_cols = colorRampPalette(c("white", "steelblue"))
         # image(x1, x2, y, col = heat_cols(12),
-        #       xlim = range(x1), 
+        #       xlim = range(x1),
         #       ylim = range(x2),
         #       xlab = var[[1]],
         #       ylab = var[[2]]
@@ -183,44 +222,25 @@ regrAlePlot = function(data, model, target, var, knots, gfx_package) {
         # contour(x1, x2, y, add = TRUE, col = "brown", lwd = 2, labcex = 1.5)
         # plot = recordPlot()
         # return(plot)
+        # base package way of producing 2nd order effects ale plot
         df = melt(y, na.rm = TRUE)
-        colnames(df) = c(var[[1]], var[[2]], "value")
-        ggplot(data = df, aes_string(x = var[[1]], y = var[[2]], color = "value")) +
-          stat_summary_2d(aes(z = value), fun = mean, bins = 50) +
+        colnames(df) = c(var[[1]], var[[2]], "ALE.effect")
+        ggplot(data = df, aes_string(x = var[[1]], y = var[[2]], color = "ALE.effect")) +
+          stat_summary_2d(aes(z = ALE.effect), fun = mean, bins = 50) +
           theme_pubr()
       } else if (gfx_package == "plotly") {
         plot = plot_ly(x = x1, y = x2, z = y, type = "surface") %>%
-        layout(scene = list(
-          xaxis = list(title = var[[1]]),
-          yaxis = list(title = var[[2]]),
-          zaxis = list(title = paste("ALE effect on", target)))  
-        )
+          layout(scene = list(
+            xaxis = list(title = var[[1]]),
+            yaxis = list(title = var[[2]]),
+            zaxis = list(title = paste("ALE effect on", target)))
+          )
         return(plot)
       }
     }
-      
-    # #Produce data frame to produce ggplot
-    # #df.3 is f.values the conture coordinates
-    # df.3 = as.vector(ALE.DATA$f.values)
-    # #df.1 are the x values
-    # df.1 = rep(ALE.DATA$x.values[[1]], ncol(ALE.DATA$f.values))
-    # #df.2 are y values
-    # df.2 = vector(length = ncol(ALE.DATA$f.values)*nrow(ALE.DATA$f.values))
-    # for(i in 1:length(ALE.DATA$x.values[[2]])){
-    #   df.2[(1 + (i-1)*
-    #           nrow(ALE.DATA$f.values)):(nrow(ALE.DATA$f.values)*i)]<- rep(
-    #             ALE.DATA$x.values[[2]][i], nrow(ALE.DATA$f.values))
-    # }
-    # #produce data frame
-    # df <- data.frame(df.1, df.2, df.3)
-    # #plot
-    # ggplot(data = df, mapping = aes(x = df.1, y = df.2, z = df.3)) +
-    #   geom_contour(aes(colour = ..level..)) +
-    #   labs(y =  var[2], x = var[1]) +
-    #   theme_pubr()
-    
   }
 }
+
 
 scatterPlot <- function(data, target, var, highlighted) {
   if (nrow(data) <= 100) {
@@ -240,19 +260,19 @@ scatterPlot <- function(data, target, var, highlighted) {
 }
 
 scatterPlot3D <- function(data, target, var, highlighted = NULL) {
-  p = plot_ly(x = ~get(var[[1]]), y = ~get(var[[2]]), z = ~get(target)) %>%
-    add_markers(data = data, marker = list(size = 1.5)) %>%
+  plot = plot_ly(x = ~get(var[[1]]), y = ~get(var[[2]]), z = ~get(target)) %>%
+    add_markers(data = data, marker = list(size = 4)) %>%
     layout(scene = list(xaxis = list(title = var[[1]]),
                         yaxis = list(title = var[[2]]),
                         zaxis = list(title = target))
     )
   if (!is.null(highlighted)) {
-    p = p %>%
-      add_markers(data = data[highlighted, ],
-                  marker = list(size = 3, color = "brown"))
-    return(p)
+    plot = plot %>%
+      add_markers(data = data[which(rownames(data) %in% highlighted), ],
+                  marker = list(size = 5, color = "brown"))
+    return(plot)
   } else {
-    return(p)
+    return(plot)
   }
 }
 
