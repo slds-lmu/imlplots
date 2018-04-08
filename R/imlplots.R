@@ -66,7 +66,7 @@ imlplots = function(data, task, models) {
   if (!(is.vector(models))) {models = list(models)}
   assertDataFrame(data)
   assertClass(task, classes = "Task")
-  lapply(m, FUN = function(elem) assertClass(elem, class = "WrappedModel"))
+  lapply(models, FUN = function(elem) assertClass(elem, class = "WrappedModel"))
   
   learner.models = lapply(models, function(x) x[["learner.model"]])
   learner.models.names = lapply(models, function(x) x[["learner"]][["id"]])
