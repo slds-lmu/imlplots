@@ -129,7 +129,7 @@ imlplots = function(data, task, models) {
           }),
           tabPanel(
             # plot settings and preview
-            title = "Settings", {
+            title = "Settings", 
               fluidRow(
                 column(
                   width = 3,
@@ -207,7 +207,7 @@ imlplots = function(data, task, models) {
                     uiOutput("plot")
                   )
                 )
-              )}
+              )
           ),
           tabPanel(
             title = "Plots",
@@ -266,34 +266,35 @@ imlplots = function(data, task, models) {
 
     # --------------------------------------------------------------------------
     # reactive values
+    
     df = reactiveValues(
-      # reactive values for current data frame, available features and
-      # prediction
+      # reactive values for current (adjusted) data frame, available features
+      # and prediction values
       values.adj = data, features = NULL, pred = NULL,
       table.rows.selected = NULL)
     
     selected = reactiveValues(
-      # reactive values for selected values
+      # reactive values only for selected values
       knots = 30, lines = 30)
 
     # --------------------------------------------------------------------------
     # ui outputs
 
     output$iceplot_center = renderUI({
-      knot_values = df$pred[, 1, with = FALSE]
+      knot.values = df$pred[, 1]
       # sampled values appearing on the horizontal axis in ICE and PDP
       selectInput(
         "iceplot_center_x",
         "Select horizontal axis value to center ICE curves around
         (depends on knots)",
-        choices = knot_values, selected = selected$iceplot.center.x)
+        choices = knot.values, selected = selected$iceplot.center.x)
     })
 
     output$ale_interaction = renderUI({
-      var_options = features[!features %in% c(selected$var)]
+      variable.options = features[!features %in% c(selected$var)]
       selectInput("ale_interaction_var",
                   "ALE interaction variable",
-                  choices = var_options)
+                  choices = variable.options)
     })
 
     output$checkbox = renderUI({
@@ -302,30 +303,30 @@ imlplots = function(data, task, models) {
                          choices = df$features.unused)
     })
 
-    slider.list = reactive({
+    sliderList = reactive({
       # list of strings with input$[feature] for numeric features
       lapply(selected$features.numeric, FUN = function(feature) {
         text = paste("input$", feature, sep = "")})
     })
 
-    selector.list = reactive({
+    selectorList = reactive({
       # list of strings with input$[feature] for factor features
       lapply(selected$features.factor, FUN = function(feature) {
         text = paste("input$", feature, sep = "")})
     })
 
-    feature.sliders = reactive({
+    featureSliders = reactive({
       # make reactive list of slider input expressions (for numeric variables)
       # by parsing strings from slider.list
       # use this function to capture inputs from feature sliders
-      lapply(slider.list(), FUN = function(x) eval(parse(text = x)))
+      lapply(sliderList(), FUN = function(x) eval(parse(text = x)))
     })
 
-    feature.selectors = reactive({
+    featureSelectors = reactive({
       # make reactive list of selector input expressions (for factor variables)
       # by parsing strings from selector.list
       # use this function to capture inputs from feature selectors
-      lapply(selector.list(), FUN = function(x) eval(parse(text = x)))
+      lapply(selectorList(), FUN = function(x) eval(parse(text = x)))
     })
 
     output$knots = renderUI({
@@ -334,12 +335,12 @@ imlplots = function(data, task, models) {
       }
       # setting to 30 upon initialization; setting init value in selected
       # does not work
-      if (selected$plot == "ale") {
+      if (selected$plot.type == "ale") {
         sliderInput(
           "knots",
           "Number of intervals into which the predictor range is divided",
           min = 1,
-          max = 500,
+          max = 100,
           value = selected$knots,
           step = 1)
       } else {
@@ -450,15 +451,15 @@ imlplots = function(data, task, models) {
      scatterPlotUnfiltered = eventReactive({
        # plot function for unfiltered scatter plot
        selected$table.rows
-       selected$plot
-       selected$aleplot_mode
+       selected$plot.type
+       selected$aleplot.mode
        selected$gfx.package
        selected$var
        selected$ale.interaction},
        ignoreNULL = FALSE,
        {
-         if (selected$plot == "ale" &&
-             selected$aleplot_mode == "Second Order Effects" &&
+         if (selected$plot.type == "ale" &&
+             selected$aleplot.mode == "Second Order Effects" &&
              selected$gfx.package == "plotly") {
            scatterPlot3D(
              data = data, target = target,
@@ -477,15 +478,15 @@ imlplots = function(data, task, models) {
        # plot function for filtered scatter plot
        df$values.filtered
        selected$table.rows
-       selected$plot
-       selected$aleplot_mode
+       selected$plot.type
+       selected$aleplot.mode
        selected$gfx.package
        selected$var
        selected$ale.interaction},
        ignoreNULL = FALSE,
        {
-         if (selected$plot == "ale" &&
-             selected$aleplot_mode == "Second Order Effects" &&
+         if (selected$plot.type == "ale" &&
+             selected$aleplot.mode == "Second Order Effects" &&
              selected$gfx.package == "plotly") {
            scatterPlot3D(
              data = df$values.filtered, target = target,
@@ -561,7 +562,7 @@ imlplots = function(data, task, models) {
        df$values.filtered
        selected$table.rows
        selected$data.selection.mode
-       selected$plot
+       selected$plot.type
        selected$iceplot.center.x
        selected$gfx.package
        selected$var
@@ -586,14 +587,14 @@ imlplots = function(data, task, models) {
                plot = placeholderPlot()
                return(plot)
              } else if (
-               (selected$data.selection.mode == "individual") &
-               (is.null(selected$table.rows))
-             ) {
+               ((selected$data.selection.mode == "individual") &&
+               (is.null(selected$table.rows)) &&
+               (!selected$plot.type == "ale"))) {
                plot = placeholderPlot()
                return(plot)
              } else {
                if (type == "regr") {
-                 if (selected$plot == "ice") {
+                 if (selected$plot.type == "ice") {
                    plot = regrIcePlot(
                      pred = df$pred,
                      var = selected$var,
@@ -604,7 +605,7 @@ imlplots = function(data, task, models) {
                      center.x = selected$iceplot.center.x
                    )
                    return(plot)
-                 } else if (selected$plot == "pdp") {
+                 } else if (selected$plot.type == "pdp") {
                    plot = regrPartialDependencePlot(
                      pred = df$pred,
                      var = selected$var,
@@ -612,7 +613,7 @@ imlplots = function(data, task, models) {
                      knots = selected$knots
                    )
                    return(plot)
-                 } else if (selected$plot == "ale") {
+                 } else if (selected$plot.type == "ale") {
 
                    plot = regrAlePlot(
                      data = df$pred,
@@ -625,7 +626,7 @@ imlplots = function(data, task, models) {
                    return(plot)
                  }
                } else if (type == "classif") {
-                 if (selected$plot == "ice") {
+                 if (selected$plot.type == "ice") {
                    plot = classifIcePlot(
                      pred = df$pred,
                      var = selected$var,
@@ -635,7 +636,7 @@ imlplots = function(data, task, models) {
                      center.x = selected$iceplot.center.x
                    )
                    return(plot)
-                 } else if (selected$plot == "pdp") {
+                 } else if (selected$plot.type == "pdp") {
 
                    plot = classifPartialDependencePlot(
                      pred = df$pred,
@@ -644,7 +645,7 @@ imlplots = function(data, task, models) {
                      knots = selected$knots
                    )
                    return(plot)
-                 } else if (selected$plot == "ale") {
+                 } else if (selected$plot.type == "ale") {
 
                    plot = classifAlePlot(
                      data = df$pred,
@@ -671,9 +672,9 @@ imlplots = function(data, task, models) {
        selected$table.rows
        selected$data.selection.mode
        selected$iceplot.center.x
-       selected$iceplot_mode
+       selected$centered
        selected$model
-       selected$plot
+       selected$plot.type
        selected$var
        selected$ale.interaction
        selected$knots
@@ -682,8 +683,7 @@ imlplots = function(data, task, models) {
          shiny::req(nrow(df$values.filtered) > 0)
          shiny::req(!(TRUE %in% apply(df$values.filtered, MARGIN = 2,
                                function(column) {NA %in% column})))
-
-         if (selected$plot == "ale") {
+         if (selected$plot.type == "ale") {
            # use ALEPlot::ALEPlot(..) to predict for ale
            shiny::withProgress(
              message = "Calculating Predictions..",
@@ -718,13 +718,12 @@ imlplots = function(data, task, models) {
                    model = selected$model,
                    knots = selected$knots,
                    lines = selected$lines,
-                   type = type
-                 )
+                   type = type)
                }
              )
-             if (selected$iceplot_mode == "Centered") {
-               shiny::req(
-                 selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
+             if (selected$centered == TRUE) {
+               # shiny::req(
+               #   selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
                shiny::req(!is.null(selected$iceplot.center.x))
                shiny::req(!is.na(selected$iceplot.center.x))
                shiny::req(selected$var %in% names(prediction))
@@ -737,18 +736,15 @@ imlplots = function(data, task, models) {
                    df$pred = centerPredictions(
                      predictions = prediction,
                      center.x = selected$iceplot.center.x,
-                     var = selected$var
-                   )
+                     var = selected$var)
                  }
                )
-             } else if (selected$iceplot_mode == "Regular") {
+             } else if (selected$centered == FALSE) {
                df$pred = prediction
              }
            } else if (selected$data.selection.mode == "individual") {
              # mmpf::marginalPrediction(...) marginalizes only over selected
              # observations
-             shinyjs::disable("lines")
-
              shiny::req(!is.null(selected$table.rows))
              shiny::req(selected$table.rows %in% as.numeric(
                row.names(df$values.filtered)))
@@ -759,11 +755,11 @@ imlplots = function(data, task, models) {
                model = selected$model,
                knots = selected$knots,
                selected.rows = selected$table.rows,
-               type = type
-             )
-             if (selected$iceplot_mode == "Centered") {
-               shiny::req(
-                 selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
+               type = type)
+             
+             if (selected$centered == TRUE) {
+               # shiny::req(
+               #   selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
                shiny::req(!is.null(selected$iceplot.center.x))
                shiny::req(!is.na(selected$iceplot.center.x))
                shiny::req(selected$var %in% names(prediction))
@@ -776,11 +772,10 @@ imlplots = function(data, task, models) {
                    df$pred = centerPredictions(
                      predictions = prediction,
                      center.x = selected$iceplot.center.x,
-                     var = selected$var
-                   )
+                     var = selected$var)
                  }
                )
-             } else if (selected$iceplot_mode == "Regular") {
+             } else if (selected$centered == FALSE) {
                df$pred = prediction
              }
            }
@@ -795,12 +790,30 @@ imlplots = function(data, task, models) {
          session$reload()
        }
      )
+     
+     observeEvent({
+       # line sampling not necessary when individual observations are selected
+       # or in ale plot mode
+       selected$data.selection.mode
+       selected$plot.type},
+       {
+         req(!is.null(selected$data.selection.mode))
+         req(!is.null(selected$plot.type))
+         if (selected$data.selection.mode == "individual" ||
+             selected$plot.type == "ale") {
+           shinyjs::disable("lines")
+         } else {
+           shinyjs::enable("lines")
+         }
+       }
+     )
 
      observeEvent({
-       input$iceplot_mode}
-       , {
-         selected$iceplot_mode = input$iceplot_mode
-         if (input$iceplot_mode == "Centered" && selected$plot == "ice") {
+       input$iceplot_mode
+       selected$plot.type},
+       ignoreNULL = FALSE,
+       {
+         if (input$iceplot_mode == "Centered" && selected$plot.type == "ice") {
            selected$centered = TRUE
          } else {
            selected$centered = FALSE
@@ -835,18 +848,18 @@ imlplots = function(data, task, models) {
 
     observeEvent({
       input$ale_interaction_var
-      selected$plot
+      selected$plot.type
       input$aleplot_mode
       selected$gfx.package},
       ignoreNULL = FALSE,
       {
-        if (selected$plot == "ale" &&
+        if (selected$plot.type == "ale" &&
             input$aleplot_mode == "Second Order Effects" &&
             selected$gfx.package == "ggplot2") {
 
           selected$ale.interaction = input$ale_interaction_var
 
-        } else if (selected$plot == "ale" &&
+        } else if (selected$plot.type == "ale" &&
                    input$aleplot_mode == "Second Order Effects" &&
                    selected$gfx.package == "plotly") {
 
@@ -858,33 +871,19 @@ imlplots = function(data, task, models) {
       }
     )
 
-    observeEvent(
+    observeEvent({
       # reset the reactive data values when variable of interest changes
-      input$var, {
+      input$var},
+      {
         df$values.adj = data
       }
     )
 
-    observeEvent(
-      # adjusts internal variable for plot type based on selected string in UI
-      {selected$type}
-      , {
-        if (selected$type == "Individual Conditional Expectation") {
-          selected$plot = "ice"
-        } else if (selected$type == "Partial Dependence") {
-          selected$plot = "pdp"
-        } else if (selected$type == "Accumulated Local Effects") {
-          selected$plot = "ale"
-          shinyjs::disable("lines")
-        }
-      }
-    )
-
-    observeEvent(
+    observeEvent({
       # differentiates checked input features into numeric and factor features;
       # important, because factor features are adjusted with selectors and need
       # to be provided the right values when adjusting
-      {input$checks},
+      input$checks},
       ignoreNULL = FALSE,
       {
         numerics = c()
@@ -906,9 +905,9 @@ imlplots = function(data, task, models) {
       }
     )
 
-    observeEvent(
+    observeEvent({
       # set reactive values to UI values
-      {input$var
+      input$var
       input$knots
       input$lines
       input$plot_type
@@ -921,8 +920,7 @@ imlplots = function(data, task, models) {
         selected$var = input$var
         selected$knots = input$knots
         selected$lines = input$lines
-        selected$type = input$plot_type
-        selected$aleplot_mode = input$aleplot_mode
+        selected$aleplot.mode = input$aleplot_mode
         selected$features = input$checks
         selected$iceplot.center.x = as.numeric(input$iceplot_center_x)
 
@@ -931,6 +929,14 @@ imlplots = function(data, task, models) {
         } else if (input$data_selection_mode ==
                    "Plot individual observations") {
           selected$data.selection.mode = "individual"
+        }
+        
+        if (input$plot_type == "Individual Conditional Expectation") {
+          selected$plot.type = "ice"
+        } else if (input$plot_type == "Partial Dependence") {
+          selected$plot.type = "pdp"
+        } else if (input$plot_type == "Accumulated Local Effects") {
+          selected$plot.type = "ale"
         }
       }
     )
@@ -949,7 +955,6 @@ imlplots = function(data, task, models) {
           selected$table.rows = NULL
 
         } else if (selected$data.selection.mode == "individual") {
-          shinyjs::disable("lines")
           # only the selected observations in data are marginalized over,
           # so sampling observations/lines is not necessary
           selected$datatable.select = list(mode = "multiple")
@@ -961,10 +966,10 @@ imlplots = function(data, task, models) {
       }
     )
 
-    observeEvent(
+    observeEvent({
       # available features for adjusting the data cannot contain variable
       # of interest and (if ale selected) ale interaction variable
-      {selected$var
+      selected$var
       selected$ale.interaction},
       ignoreNULL = FALSE,
       {
@@ -998,31 +1003,33 @@ imlplots = function(data, task, models) {
       # set reactive values to NULL if input contains NA or NULL values
       # this sometimes happens when the input value is evaluated before the UI
       # has finished rendering
-      feature.sliders()
-      feature.selectors()},
+      featureSliders()
+      featureSelectors()},
       {
-        if ((TRUE %in% lapply(feature.sliders(), is.null)) ||
-            (TRUE %in% lapply(feature.sliders(), is.na))) {
+        if ((TRUE %in% lapply(featureSliders(), is.null)) ||
+            (TRUE %in% lapply(featureSliders(), is.na))) {
           selected$values.numeric = NULL
         } else {
-          selected$values.numeric = unlist(feature.sliders(),
+          selected$values.numeric = unlist(featureSliders(),
                                            function(x) return(as.numeric(x)))
         }
-        if ((TRUE %in% lapply(feature.selectors(), is.null)) ||
-            (TRUE %in% lapply(feature.selectors(), is.na))) {
+       
+        # now do the same with selectors
+        if ((TRUE %in% lapply(featureSelectors(), is.null)) ||
+            (TRUE %in% lapply(featureSelectors(), is.na))) {
           selected$values.factor = NULL
         } else {
-          selected$values.factor = unlist(feature.selectors(),
+          selected$values.factor = unlist(featureSelectors(),
                                           function(x) return(as.numeric(x)))
         }
       }
     )
 
-    observeEvent(
+    observeEvent({
       # update numeric feature data when user adjusts sliders
-      ignoreNULL = FALSE, {
       selected$values.numeric
       selected$features.numeric},
+      ignoreNULL = FALSE,
       {
         if (!(is.null(selected$values.numeric))) {
           for (i in 1:length(selected$features.numeric)) {
