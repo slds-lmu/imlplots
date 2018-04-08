@@ -40,8 +40,10 @@ makePredictionsIceSampled = function(data, var, knots, lines, model, type) {
       }
     )
   }
-  prediction[ , 1] = round(prediction[, 1, which = FALSE, drop = FALSE],
-                            digits = 5)
+  var.vector = prediction[, 1, which = FALSE, drop = FALSE]
+  if (is.numeric(var.vector)) {
+    prediction[ , 1] = round(var.vector, digits = 5)
+  } else {}
   # marginalPrediction (per default) samples from a uniform distribution on the
   # [min; max] interval; the sampled values do not have a decimal point cutoff
   # this can cause problems during the centering call when comparing the sampled
@@ -99,8 +101,10 @@ makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
       }
     )
   }
-  prediction[ , 1] = round(prediction[, 1, which = FALSE, drop = FALSE],
-                            digits = 5)
+  var.vector = prediction[, 1, which = FALSE, drop = FALSE]
+  if (is.numeric(var.vector)) {
+    prediction[ , 1] = round(var.vector, digits = 5)
+  } else {}
   # marginalPrediction (per default) samples from a uniform distribution on the
   # [min; max] interval; the sampled values do not have a decimal point cutoff
   # this can cause problems during the centering call when comparing the sampled

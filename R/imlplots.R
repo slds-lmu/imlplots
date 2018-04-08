@@ -922,7 +922,7 @@ imlplots = function(data, task, models) {
         selected$lines = input$lines
         selected$aleplot.mode = input$aleplot_mode
         selected$features = input$checks
-        selected$iceplot.center.x = as.numeric(input$iceplot_center_x)
+        selected$iceplot.center.x = input$iceplot_center_x
 
         if (input$data_selection_mode == "Plot all sampled observations") {
           selected$data.selection.mode = "sampling"
