@@ -30,7 +30,7 @@ classifIcePlot = function(pred, var, knots, lines, centered, centerpoint) {
     line.alpha = 0.4
     line.size = 0.3
   }
-  plot <- ggplot() +
+  plot = ggplot() +
     geom_line(data = data.ice, aes_string(
       x = var, y = "value", group = "variable", color = "class"),
       size = line.size,
@@ -42,7 +42,7 @@ classifIcePlot = function(pred, var, knots, lines, centered, centerpoint) {
     theme_pubr()
 
   if (centered == TRUE) {
-    plot <- plot +
+    plot = plot +
       geom_hline(yintercept = 0, linetype = "dashed") +
       geom_vline(xintercept = as.numeric(centerpoint), linetype = "dashed")
   } else {}
@@ -118,7 +118,7 @@ regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
 
   iceplot.data = melt(pred, id.vars = var)
 
-  plot <- ggplot() +
+  plot = ggplot() +
     geom_line(
       data = iceplot.data,
       aes_string(
@@ -134,7 +134,7 @@ regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
     labs(y =  target) +
     theme_pubr()
   if (centered == TRUE) {
-    plot <- plot +
+    plot = plot +
       geom_hline(yintercept = 0, linetype = "dashed") +
       geom_vline(xintercept = as.numeric(centerpoint), linetype = "dashed")
   } else {}
@@ -273,7 +273,7 @@ classifAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
 }
 
 
-scatterPlot <- function(data, target, var, highlighted) {
+scatterPlot = function(data, target, var, highlighted) {
   # 2 dimensional scatter plot
   #
   # Args:
@@ -299,7 +299,7 @@ scatterPlot <- function(data, target, var, highlighted) {
   return(plot)
 }
 
-scatterPlot3D <- function(data, target, var, highlighted = NULL) {
+scatterPlot3D = function(data, target, var, highlighted = NULL) {
   # 3 dimensional scatter plot
   #
   # Args:
@@ -325,7 +325,7 @@ scatterPlot3D <- function(data, target, var, highlighted = NULL) {
   }
 }
 
-placeholderPlot <- function() {
+placeholderPlot = function() {
   # placeholder plot appears, if no observations can be found for predictions
   # Returns:
   #   ggplot2 object

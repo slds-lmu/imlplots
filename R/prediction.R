@@ -1,4 +1,4 @@
-makePredictionsIceSampled <- function(data, var, knots, lines, model, type) {
+makePredictionsIceSampled = function(data, var, knots, lines, model, type) {
   # create Monte Carlo estimates for ICE and PDP curve with random sampling
   #
   # Args:
@@ -15,7 +15,7 @@ makePredictionsIceSampled <- function(data, var, knots, lines, model, type) {
   #   one additonal column that averages the ICE curves to a PDP estimate
   if (type == "regr") {
 
-    prediction <- marginalPrediction(
+    prediction = marginalPrediction(
       data = data,
       vars = var,
       n = c(knots, lines),
@@ -27,7 +27,7 @@ makePredictionsIceSampled <- function(data, var, knots, lines, model, type) {
 
   } else if (type == "classif") {
 
-    prediction <- marginalPrediction(
+    prediction = marginalPrediction(
       data = data,
       vars = var,
       n = c(knots, lines),
@@ -40,7 +40,7 @@ makePredictionsIceSampled <- function(data, var, knots, lines, model, type) {
       }
     )
   }
-  prediction[ , 1] <- round(prediction[, 1, which = FALSE, drop = FALSE],
+  prediction[ , 1] = round(prediction[, 1, which = FALSE, drop = FALSE],
                             digits = 5)
   # marginalPrediction (per default) samples from a uniform distribution on the
   # [min; max] interval; the sampled values do not have a decimal point cutoff
@@ -50,7 +50,7 @@ makePredictionsIceSampled <- function(data, var, knots, lines, model, type) {
   return(prediction)
 }
 
-makePredictionsIceSelected <- function(data, var, model, knots, selected.rows,
+makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
                                        type) {
   # create Monte Carlo estimates for ICE and PDP curves, marginalize only over
   # specific observations/rows
@@ -70,7 +70,7 @@ makePredictionsIceSelected <- function(data, var, model, knots, selected.rows,
   #   one additonal column that averages the ICE curves to a PDP estimate
   if (type == "regr") {
 
-    prediction <- marginalPrediction(
+    prediction = marginalPrediction(
       data = data,
       vars = var,
       n = knots,
@@ -83,7 +83,7 @@ makePredictionsIceSelected <- function(data, var, model, knots, selected.rows,
       })
   } else if (type == "classif") {
 
-    prediction <- marginalPrediction(
+    prediction = marginalPrediction(
       data = data,
       vars = var,
       n = knots,
@@ -99,7 +99,7 @@ makePredictionsIceSelected <- function(data, var, model, knots, selected.rows,
       }
     )
   }
-  prediction[ , 1] <- round(prediction[, 1, which = FALSE, drop = FALSE],
+  prediction[ , 1] = round(prediction[, 1, which = FALSE, drop = FALSE],
                             digits = 5)
   # marginalPrediction (per default) samples from a uniform distribution on the
   # [min; max] interval; the sampled values do not have a decimal point cutoff
@@ -109,7 +109,7 @@ makePredictionsIceSelected <- function(data, var, model, knots, selected.rows,
   return(prediction)
 }
 
-centerPredictions <- function(predictions, centerpoint, var) {
+centerPredictions = function(predictions, centerpoint, var) {
   # centers ICE predictions for centered ICE plots
   #
   # Args:
@@ -119,15 +119,24 @@ centerPredictions <- function(predictions, centerpoint, var) {
   #   var (string): selected variable of interest on horizontal axis
   # Returns:
   #   see makePredictionsIce...(); centerpoint row values pinched to 0.
-  dropped_var = predictions[, !(colnames(predictions) %in% var), with = FALSE]
-  match_index = match(centerpoint, predictions[ , 1, which = FALSE])
-  centered = apply(dropped_var, 1, '-', dropped_var[match_index, ])
-  centered = do.call(rbind.data.frame, centered)
-  centered_pred = cbind(predictions[, var, with = FALSE, drop = FALSE], centered)
-  return(centered_pred)
+  pred.var.dropped =
+    predictions[, !(colnames(predictions) %in% var), with = FALSE]
+  # predictions without variable column
+  match.index = match(centerpoint, predictions[ , 1, which = FALSE])
+  # match centerpoint index with according value in variable column
+  centered.var.dropped = apply(
+    pred.var.dropped, 1, '-', pred.var.dropped[match.index, ])
+  # substract the row that contains the centerpoint from all rows
+  centered.var.dropped = do.call(rbind.data.frame, centered.var.dropped)
+  # create data frame from list structure containing centered predictions
+  pred.centered = cbind(
+    predictions[, var, with = FALSE, drop = FALSE],
+    centered.var.dropped)
+  # bind centered data frame together with variable column
+  return(pred.centered)
 }
 
-makePredictionsAle <- function(data, target, model, var1, var2 = NULL, knots) {
+makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots) {
   # create predictions for ALE plots
   #
   # Args:
@@ -146,7 +155,7 @@ makePredictionsAle <- function(data, target, model, var1, var2 = NULL, knots) {
   pred_function = function(X.model, newdata) {
     as.numeric(predict(X.model, newdata))
   }
-  obj <- tryCatch(
+  obj = tryCatch(
     {ALEPlot::ALEPlot(
     data[ , -which(names(data) == target)],
     model,
