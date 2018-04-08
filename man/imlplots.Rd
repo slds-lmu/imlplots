@@ -40,7 +40,7 @@ the data or manually setting a variable to a fixed value for all observations.
 
 The function performs a basic check upon initialization,
 whether the provided models can be used to properly predict.
-If the check fails, it is recommended to manually test the model with the 
+If the check fails, it is recommended to manually test the model with the
 \code{marginalPrediction()} function of the mmpf package.
 }
 \examples{
