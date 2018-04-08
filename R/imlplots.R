@@ -62,9 +62,12 @@
 #' @export
 
 imlplots = function(data, task, models) {
-
+  
   if (!(is.vector(models))) {models = list(models)}
-
+  assertDataFrame(data)
+  assertClass(task, classes = "Task")
+  lapply(m, FUN = function(elem) assertClass(elem, class = "WrappedModel"))
+  
   learner.models = lapply(models, function(x) x[["learner.model"]])
   learner.models.names = lapply(models, function(x) x[["learner"]][["id"]])
 
@@ -264,13 +267,14 @@ imlplots = function(data, task, models) {
     # --------------------------------------------------------------------------
     # reactive values
     df = reactiveValues(
-      # reactive values for current data frame, available features and prediction
-      values.adj = data, features = NULL, pred = NULL, table.rows.selected = NULL
-    )
+      # reactive values for current data frame, available features and
+      # prediction
+      values.adj = data, features = NULL, pred = NULL,
+      table.rows.selected = NULL)
+    
     selected = reactiveValues(
       # reactive values for selected values
-      knots = 30, lines = 30
-    )
+      knots = 30, lines = 30)
 
     # --------------------------------------------------------------------------
     # ui outputs
@@ -719,7 +723,8 @@ imlplots = function(data, task, models) {
                }
              )
              if (selected$iceplot_mode == "Centered") {
-               shiny::req(selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
+               shiny::req(
+                 selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
                shiny::req(!is.null(selected$iceplot.center.x))
                shiny::req(!is.na(selected$iceplot.center.x))
                shiny::req(selected$var %in% names(prediction))
@@ -757,7 +762,8 @@ imlplots = function(data, task, models) {
                type = type
              )
              if (selected$iceplot_mode == "Centered") {
-               shiny::req(selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
+               shiny::req(
+                 selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
                shiny::req(!is.null(selected$iceplot.center.x))
                shiny::req(!is.na(selected$iceplot.center.x))
                shiny::req(selected$var %in% names(prediction))
@@ -901,7 +907,7 @@ imlplots = function(data, task, models) {
     )
 
     observeEvent(
-      # set reactive values with UI values
+      # set reactive values to UI values
       {input$var
       input$knots
       input$lines
@@ -922,7 +928,8 @@ imlplots = function(data, task, models) {
 
         if (input$data_selection_mode == "Plot all sampled observations") {
           selected$data.selection.mode = "sampling"
-        } else if (input$data_selection_mode == "Plot individual observations") {
+        } else if (input$data_selection_mode ==
+                   "Plot individual observations") {
           selected$data.selection.mode = "individual"
         }
       }
