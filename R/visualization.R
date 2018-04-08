@@ -1,6 +1,19 @@
 classifIcePlot = function(pred, var, knots, lines, centered, centerpoint) {
+  # ICE plots for regression tasks
+  #
+  # Args:
+  #   pred (data frame): predictions from makePredictionsIce...(...)
+  #   var (string): selected variable of interest on horizontal axis
+  #   knots (numeric): selected number of knots = unique values on horizontal axis
+  #   lines (numeric): selected number of lines = number sampled of observations
+  #   centered (boolean): if TRUE, plot additional crosshair at centerpoint
+  #   centerpoint (numeric): indicates the centerpoint to plot crosshair at
+  # Returns:
+  #   ggplot2 object
   longformat_pred = melt(pred, id.vars = var) %>%
     mutate(class = sub('\\..*$','', variable))
+  # create class variable by stripping away parts of string after the
+  # dot e.g.(class1.pred1) -> (class1)
   pdp_data = filter(longformat_pred, grepl('ave', variable))
   iceplot_data = filter(longformat_pred, !grepl('ave', variable))
 
@@ -17,7 +30,6 @@ classifIcePlot = function(pred, var, knots, lines, centered, centerpoint) {
     line.alpha = 0.4
     line.size = 0.3
   }
-  # do not show points on lines
   plot <- ggplot() +
     geom_line(data = iceplot_data, aes_string(
       x = var, y = "value", group = "variable", color = "class"),
@@ -38,6 +50,14 @@ classifIcePlot = function(pred, var, knots, lines, centered, centerpoint) {
 }
 
 classifPartialDependencePlot = function(pred, var, target, knots) {
+  # ICE plots for regression tasks
+  #
+  # Args:
+  #   pred (data.frame): of predictions from makePredictionsIce...(...)
+  #   var (string): selected variable of interest on horizontal axis
+  #   target (string): selected target variable for predictons
+  # Returns:
+  #   ggplot2 object
   longformat_pred = melt(pred, id.vars = var) %>%
     mutate(class = sub('\\..*$','', variable))
   pdp_data = filter(longformat_pred, grepl('ave', variable))
@@ -52,6 +72,14 @@ classifPartialDependencePlot = function(pred, var, target, knots) {
 }
 
 regrPartialDependencePlot = function(pred, var, target, knots) {
+  # PDP for regression tasks
+  #
+  # Args:
+  #   pred (data.frame): predictions from makePredictionsIce...(...)
+  #   var (string): selected variable of interest on horizontal axis
+  #   target (string): selected target variable for predictons
+  # Returns:
+  #   ggplot2 object
   ggplot() +
     geom_line(
       data = pred,
@@ -60,10 +88,20 @@ regrPartialDependencePlot = function(pred, var, target, knots) {
       size = 1) +
     labs(y =  target) +
     theme_pubr()
-  # }
 }
 
 regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
+  # ICE plots for regression tasks
+  #
+  # Args:
+  #   pred (data.frame): predictions from makePredictionsIce...(...)
+  #   var (string): selected variable of interest on horizontal axis
+  #   target (string): selected target variable for predictons
+  #   lines (numeric): selected number of lines = number sampled of observations
+  #   centered (boolean): if TRUE, plot additional crosshair at centerpoint
+  #   centerpoint (numeric): indicates the centerpoint to plot crosshair at
+  # Returns:
+  #   ggplot2 object
   if (lines <= 15) {
     line.alpha = 1
     line.size = 0.7
@@ -106,6 +144,17 @@ regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
 
 regrAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
                        gfx_package = "ggplot2") {
+  # ALE plots for regression tasks
+  #
+  # Args:
+  #   pred (data.frame): predictions from makePredictionsIce...(...)
+  #   target (string): target variable for predictions
+  #   var1 (string): selected variable of interest on horizontal axis
+  #   var2 (string): selected interaction variable for ALE second order effects
+  #   gfx_package (string): selected package for rendering plots
+  #                         (ggplot2 or plotly)
+  # Returns:
+  #   ggplot2 or plotly object
   if (any(class(data) == "warning") |
       any(class(data) == "error")) {
     ggplot() +
@@ -160,6 +209,17 @@ regrAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
 
 classifAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
                           gfx_package = "ggplot2") {
+  # ALE plots for classification tasks
+  #
+  # Args:
+  #   pred (data.frame): predictions from makePredictionsIce...(...)
+  #   target (string): target variable for predictions
+  #   var1 (string): selected variable of interest on horizontal axis
+  #   var2 (string): selected interaction variable for ALE second order effects
+  #   gfx_package (string): selected package for rendering plots
+  #                         (ggplot2 or plotly)
+  # Returns:
+  #   ggplot2 or plotly object
   if (any(class(data) == "warning") |
       any(class(data) == "error")) {
     ggplot() +
@@ -199,7 +259,7 @@ classifAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
         df = acast(data, get(var1) ~ get(var2), value.var = "ale.effect", drop = FALSE)
         x = as.numeric(rownames(df))
         y = as.numeric(colnames(df))
-        
+
         plot = plot_ly(x = x, y = y, z = df, type = "surface") %>%
           layout(scene = list(
             xaxis = list(title = var1),
@@ -214,8 +274,15 @@ classifAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
 
 
 scatterPlot <- function(data, target, var, highlighted) {
-  # a 2D scatter plot of the data
-  # highlighted indicates the row indices of the points to be highlighted
+  # 2 dimensional scatter plot
+  #
+  # Args:
+  #   data (data.frame): data containing at least two columns
+  #   target (string): vertical axis variable
+  #   var (string): horizontal axis variable
+  #   highlighted (numeric vector): row indices of highlighted observations
+  # Returns:
+  #   ggplot2 object
   if (nrow(data) <= 100) {
     pointsize = 1.5
   } else if (nrow(data) > 100 & nrow(data) <= 600) {
@@ -233,10 +300,17 @@ scatterPlot <- function(data, target, var, highlighted) {
 }
 
 scatterPlot3D <- function(data, target, var, highlighted = NULL) {
-  # a 3D scatter plot of the data
-  # highlighted indicates the row indices of the points to be highlighted
+  # 3 dimensional scatter plot
+  #
+  # Args:
+  #   data (data.frame): data containing at least three columns
+  #   target (string): z axis variable
+  #   var (string vector): x and y axis variables
+  #   highlighted (numeric vector): row indices of highlighted observations
+  # Returns:
+  #   plotly object
   plot = plot_ly(x = ~get(var[[1]]), y = ~get(var[[2]]), z = ~get(target)) %>%
-    add_markers(data = data, marker = list(size = 4)) %>%
+    add_markers(data = data, marker = list(size = 3)) %>%
     layout(scene = list(xaxis = list(title = var[[1]]),
                         yaxis = list(title = var[[2]]),
                         zaxis = list(title = target))
@@ -253,6 +327,8 @@ scatterPlot3D <- function(data, target, var, highlighted = NULL) {
 
 placeholderPlot <- function() {
   # placeholder plot appears, if no observations can be found for predictions
+  # Returns:
+  #   ggplot2 object
   ggplot() +
     annotate(geom = "text",
              x = 1, y = 1,

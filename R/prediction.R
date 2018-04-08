@@ -1,14 +1,18 @@
 makePredictionsIceSampled <- function(data, var, knots, lines, model, type) {
-  # generates the predictions for ICE and PDP curves if sampling mode is
-  # selected
-  # inputs: see help(marginalPrediction)
-  # output: a data table (nrow = knots, ncol = 2 + lines);
-  # the first column contains all sampled values of data[var];
-  # lines specifies how many lines are to be predicted/displayed;
-  # each sampled ICE line consists of one column of predictions;
-  # one additonal column aggregates all individual predictions to the PDP
-  # average
-
+  # create Monte Carlo estimates for ICE and PDP curve with random sampling
+  #
+  # Args:
+  #   data (data frame): data frame of test data containing exactly the
+  #                      same variables as training data
+  #   var (string): selected variable of interest on horizontal axis
+  #   knots (numeric): sampled unique values of var
+  #   lines (numeric): sampled observations to create ICE curves for
+  #   model (obj): mlr trained model
+  #   type (string): "regr" or "classif" for regression and classification tasks
+  # Returns:
+  #   a data frame with one column containing all sampled unique values of var;
+  #   as many columns as lines with predictions produced by model (ICE curves)
+  #   one additonal column that averages the ICE curves to a PDP estimate
   if (type == "regr") {
 
     prediction <- marginalPrediction(
@@ -46,14 +50,24 @@ makePredictionsIceSampled <- function(data, var, knots, lines, model, type) {
   return(prediction)
 }
 
-makePredictionsIceSelected <- function(data, var, model, knots, selected_rows, type) {
-  # generates predictions for ICE and PDP curves if individual mode is selected
-  # inputs: see help(marginalPrediction)
-  # selected_rows indicates the observations to be marginalized over;
-  # output: a data table (nrow = knots, ncol = 2 + selected_rows);
-  # the first column contains all sampled values of data[var];
-  # the last column contains the average predictions for the PDP
-  # each sampled ICE line consists of one column of predictions;
+makePredictionsIceSelected <- function(data, var, model, knots, selected.rows,
+                                       type) {
+  # create Monte Carlo estimates for ICE and PDP curves, marginalize only over
+  # specific observations/rows
+  #
+  # Args:
+  #   data (data frame): data frame of test data containing exactly the
+  #                      same variables as training data
+  #   var (string): selected variable of interest on horizontal axis
+  #   model (obj): mlr trained model
+  #   knots (numeric): sampled unique values of var
+  #   selected.rows (numeric): row IDs of data to marginalize over
+  #   type (string): "regr" or "classif" for regression and classification tasks
+  # Returns:
+  #   a data frame with one column containing all sampled unique values of var;
+  #   as many columns as selected.rows with predictions produced by model
+  #   (ICE curves);
+  #   one additonal column that averages the ICE curves to a PDP estimate
   if (type == "regr") {
 
     prediction <- marginalPrediction(
@@ -61,7 +75,7 @@ makePredictionsIceSelected <- function(data, var, model, knots, selected_rows, t
       vars = var,
       n = knots,
       int.points = which(
-        selected_rows %in% rownames(data)
+        selected.rows %in% rownames(data)
       ),
       model = model,
       aggregate.fun = function(x) {
@@ -74,7 +88,7 @@ makePredictionsIceSelected <- function(data, var, model, knots, selected_rows, t
       vars = var,
       n = knots,
       int.points = which(
-        selected_rows %in% rownames(data)
+        selected.rows %in% rownames(data)
       ),
       model = model,
       aggregate.fun = function(x) {
@@ -97,13 +111,14 @@ makePredictionsIceSelected <- function(data, var, model, knots, selected_rows, t
 
 centerPredictions <- function(predictions, centerpoint, var) {
   # centers ICE predictions for centered ICE plots
-  # predictions: outputs of makePredictionsIce...()
-  # centerpoint: specifies the sampled knot / value on the horizontal axis
-  # where all ICE curves are 'pinched' to 0.
-  # While a column indicates an individual observation / line,
-  # centerpoint indicates a specific row that is to be substracted from each
-  # column
-  # output: see makePredictionsIce...(); centerpoint row values pinchted to 0.
+  #
+  # Args:
+  #   predictions (data frame): outputs of makePredictionsIce...()
+  #   centerpoint (numeric): specifies the sampled knot / value on the
+  #   horizontal axis where all ICE curves are 'pinched' to 0.
+  #   var (string): selected variable of interest on horizontal axis
+  # Returns:
+  #   see makePredictionsIce...(); centerpoint row values pinched to 0.
   dropped_var = predictions[, !(colnames(predictions) %in% var), with = FALSE]
   match_index = match(centerpoint, predictions[ , 1, which = FALSE])
   centered = apply(dropped_var, 1, '-', dropped_var[match_index, ])
@@ -113,9 +128,21 @@ centerPredictions <- function(predictions, centerpoint, var) {
 }
 
 makePredictionsAle <- function(data, target, model, var1, var2 = NULL, knots) {
-  # creates ALE plot predictions via ALEPlot package
-  # outputs a data.frame with one or two column(s) containing data[var1] and
-  # optionally data[var2]; additional column contains ALE predictions
+  # create predictions for ALE plots
+  #
+  # Args:
+  #   data (data frame): data frame of test data containing exactly the
+  #                      same variables as training data
+  #   target (string): target variable for ALE predictions
+  #   var1 (string): selected variable of interest on horizontal axis
+  #   var2 (string): optional interaction variable for ale plots
+  #   knots (numeric): number of intervals into which the predictor range is
+  #                    divided when calculating ALE plot effects.
+  # Returns:
+  #   a data frame with one column containing all sampled unique values of var1;
+  #   if var2 is not NULL, one column with sampled unique values of var2
+  #   one column with the according ALE effects
+
   pred_function = function(X.model, newdata) {
     as.numeric(predict(X.model, newdata))
   }
