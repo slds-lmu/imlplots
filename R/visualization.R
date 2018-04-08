@@ -47,7 +47,7 @@ classifIcePlot = function(pred, var, knots, lines, centered, center.x) {
     }
     plot = plot +
       geom_hline(yintercept = 0, linetype = "dashed") +
-      geom_vline(xintercept = center.x, linetype = "dashed")
+      geom_vline(xintercept = as.numeric(center.x), linetype = "dashed")
   } else {}
   return(plot)
 }
@@ -86,7 +86,7 @@ regrPartialDependencePlot = function(pred, var, target, knots) {
   ggplot() +
     geom_line(
       data = pred,
-      aes(x = var, y = preds.ave),
+      aes_string(x = var, y = "preds.ave"),
       color = "steelblue",
       size = 1) +
     labs(y =  target) +
@@ -138,13 +138,12 @@ regrIcePlot = function(pred, var, target, knots, lines, centered, center.x) {
     theme_pubr()
   
   if (centered == TRUE) {
-    
     if (is.factor(pred[[var]])) {
       center.x = match(center.x, levels(pred[[var]]))
     }
     plot = plot +
       geom_hline(yintercept = 0, linetype = "dashed") +
-      geom_vline(xintercept = center.x, linetype = "dashed")
+      geom_vline(xintercept = as.numeric(center.x), linetype = "dashed")
   } else {}
   return(plot)
 }
