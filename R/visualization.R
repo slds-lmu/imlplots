@@ -1,4 +1,4 @@
-classifIcePlot = function(pred, var, knots, lines, centered, centerpoint) {
+classifIcePlot = function(pred, var, knots, lines, centered, center.x) {
   # ICE plots for regression tasks
   #
   # Args:
@@ -6,8 +6,8 @@ classifIcePlot = function(pred, var, knots, lines, centered, centerpoint) {
   #   var (string): selected variable of interest on horizontal axis
   #   knots (numeric): selected number of knots = unique values on horizontal axis
   #   lines (numeric): selected number of lines = number sampled of observations
-  #   centered (boolean): if TRUE, plot additional crosshair at centerpoint
-  #   centerpoint (numeric): indicates the centerpoint to plot crosshair at
+  #   centered (boolean): if TRUE, plot additional crosshair at center.x
+  #   center.x (numeric): indicates the centering point to plot crosshair at
   # Returns:
   #   ggplot2 object
   pred.longformat = melt(pred, id.vars = var) %>%
@@ -44,7 +44,7 @@ classifIcePlot = function(pred, var, knots, lines, centered, centerpoint) {
   if (centered == TRUE) {
     plot = plot +
       geom_hline(yintercept = 0, linetype = "dashed") +
-      geom_vline(xintercept = as.numeric(centerpoint), linetype = "dashed")
+      geom_vline(xintercept = as.numeric(center.x), linetype = "dashed")
   } else {}
   return(plot)
 }
@@ -90,7 +90,7 @@ regrPartialDependencePlot = function(pred, var, target, knots) {
     theme_pubr()
 }
 
-regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
+regrIcePlot = function(pred, var, target, knots, lines, centered, center.x) {
   # ICE plots for regression tasks
   #
   # Args:
@@ -98,8 +98,8 @@ regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
   #   var (string): selected variable of interest on horizontal axis
   #   target (string): selected target variable for predictons
   #   lines (numeric): selected number of lines = number sampled of observations
-  #   centered (boolean): if TRUE, plot additional crosshair at centerpoint
-  #   centerpoint (numeric): indicates the centerpoint to plot crosshair at
+  #   centered (boolean): if TRUE, plot additional crosshair at center.x
+  #   center.x (numeric): indicates the centering point to plot crosshair at
   # Returns:
   #   ggplot2 object
   if (lines <= 15) {
@@ -136,14 +136,14 @@ regrIcePlot = function(pred, var, target, knots, lines, centered, centerpoint) {
   if (centered == TRUE) {
     plot = plot +
       geom_hline(yintercept = 0, linetype = "dashed") +
-      geom_vline(xintercept = as.numeric(centerpoint), linetype = "dashed")
+      geom_vline(xintercept = as.numeric(center.x), linetype = "dashed")
   } else {}
   return(plot)
 }
 
 
 regrAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
-                       gfx_package = "ggplot2") {
+                       gfx.package = "ggplot2") {
   # ALE plots for regression tasks
   #
   # Args:
@@ -151,7 +151,7 @@ regrAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
   #   target (string): target variable for predictions
   #   var1 (string): selected variable of interest on horizontal axis
   #   var2 (string): selected interaction variable for ALE second order effects
-  #   gfx_package (string): selected package for rendering plots
+  #   gfx.package (string): selected package for rendering plots
   #                         (ggplot2 or plotly)
   # Returns:
   #   ggplot2 or plotly object
@@ -183,13 +183,13 @@ regrAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
         theme_pubr()
     } else {
       # two variables
-      if (gfx_package == "ggplot2") {
+      if (gfx.package == "ggplot2") {
         # 2d heat map
         plot = ggplot(
           data = data, aes_string(x = var1, y = var2, color = "ale.effect")) +
           stat_summary_2d(aes(z = ale.effect), fun = mean, bins = 50) +
           theme_pubr()
-      } else if (gfx_package == "plotly") {
+      } else if (gfx.package == "plotly") {
         # 3d scatter
         df = acast(data, get(var1) ~ get(var2), value.var = "ale.effect", drop = FALSE)
         x = as.numeric(rownames(df))
@@ -208,7 +208,7 @@ regrAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
 }
 
 classifAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
-                          gfx_package = "ggplot2") {
+                          gfx.package = "ggplot2") {
   # ALE plots for classification tasks
   #
   # Args:
@@ -216,7 +216,7 @@ classifAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
   #   target (string): target variable for predictions
   #   var1 (string): selected variable of interest on horizontal axis
   #   var2 (string): selected interaction variable for ALE second order effects
-  #   gfx_package (string): selected package for rendering plots
+  #   gfx.package (string): selected package for rendering plots
   #                         (ggplot2 or plotly)
   # Returns:
   #   ggplot2 or plotly object
@@ -248,13 +248,13 @@ classifAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
         theme_pubr()
     } else {
       # two variables
-      if (gfx_package == "ggplot2") {
+      if (gfx.package == "ggplot2") {
         # 2d heat map
         plot = ggplot(
           data = data, aes_string(x = var1, y = var2, color = "ale.effect")) +
           stat_summary_2d(aes(z = ale.effect), fun = mean, bins = 50) +
           theme_pubr()
-      } else if (gfx_package == "plotly") {
+      } else if (gfx.package == "plotly") {
         # 3d scatter
         df = acast(data, get(var1) ~ get(var2), value.var = "ale.effect", drop = FALSE)
         x = as.numeric(rownames(df))

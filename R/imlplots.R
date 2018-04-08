@@ -135,7 +135,7 @@ imlplots = function(data, task, models) {
                     title = "Plot settings",
                     width = NULL,
                     status = "primary",
-                    selectInput("gfx_package", "Select graphics package",
+                    selectInput("gfx.package", "Select graphics package",
                       choices = c("ggplot2",
                         "plotly (resource intensive)")
                     ),
@@ -279,10 +279,10 @@ imlplots = function(data, task, models) {
       knot_values = df$pred[, 1, with = FALSE]
       # sampled values appearing on the horizontal axis in ICE and PDP
       selectInput(
-        "iceplot_centerpoint",
+        "iceplot_center_x",
         "Select horizontal axis value to center ICE curves around
         (depends on knots)",
-        choices = knot_values, selected = selected$iceplot_center)
+        choices = knot_values, selected = selected$iceplot.center.x)
     })
 
     output$ale_interaction = renderUI({
@@ -558,7 +558,7 @@ imlplots = function(data, task, models) {
        selected$table.rows
        selected$data.selection.mode
        selected$plot
-       selected$iceplot_center
+       selected$iceplot.center.x
        selected$gfx.package
        selected$var
        selected$ale.interaction
@@ -597,7 +597,7 @@ imlplots = function(data, task, models) {
                      knots = selected$knots,
                      lines = selected$lines,
                      centered = selected$centered,
-                     centerpoint = selected$iceplot_center
+                     center.x = selected$iceplot.center.x
                    )
                    return(plot)
                  } else if (selected$plot == "pdp") {
@@ -616,7 +616,7 @@ imlplots = function(data, task, models) {
                      var1 = selected$var,
                      var2 = selected$ale.interaction,
                      knots = selected$knots,
-                     gfx_package = selected$gfx.package
+                     gfx.package = selected$gfx.package
                    )
                    return(plot)
                  }
@@ -628,7 +628,7 @@ imlplots = function(data, task, models) {
                      knots = selected$knots,
                      lines = selected$lines,
                      centered = selected$centered,
-                     centerpoint = selected$iceplot_center
+                     center.x = selected$iceplot.center.x
                    )
                    return(plot)
                  } else if (selected$plot == "pdp") {
@@ -648,7 +648,7 @@ imlplots = function(data, task, models) {
                      var1 = selected$var,
                      var2 = selected$ale.interaction,
                      knots = selected$knots,
-                     gfx_package = selected$gfx.package
+                     gfx.package = selected$gfx.package
                    )
                    return(plot)
                  }
@@ -666,7 +666,7 @@ imlplots = function(data, task, models) {
        df$values.filtered
        selected$table.rows
        selected$data.selection.mode
-       selected$iceplot_center
+       selected$iceplot.center.x
        selected$iceplot_mode
        selected$model
        selected$plot
@@ -719,9 +719,9 @@ imlplots = function(data, task, models) {
                }
              )
              if (selected$iceplot_mode == "Centered") {
-               shiny::req(selected$iceplot_center %in% prediction[, 1, with = FALSE])
-               shiny::req(!is.null(selected$iceplot_center))
-               shiny::req(!is.na(selected$iceplot_center))
+               shiny::req(selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
+               shiny::req(!is.null(selected$iceplot.center.x))
+               shiny::req(!is.na(selected$iceplot.center.x))
                shiny::req(selected$var %in% names(prediction))
 
                shiny::withProgress(
@@ -731,7 +731,7 @@ imlplots = function(data, task, models) {
                  {
                    df$pred = centerPredictions(
                      predictions = prediction,
-                     centerpoint = selected$iceplot_center,
+                     center.x = selected$iceplot.center.x,
                      var = selected$var
                    )
                  }
@@ -757,9 +757,9 @@ imlplots = function(data, task, models) {
                type = type
              )
              if (selected$iceplot_mode == "Centered") {
-               shiny::req(selected$iceplot_center %in% prediction[, 1, with = FALSE])
-               shiny::req(!is.null(selected$iceplot_center))
-               shiny::req(!is.na(selected$iceplot_center))
+               shiny::req(selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
+               shiny::req(!is.null(selected$iceplot.center.x))
+               shiny::req(!is.na(selected$iceplot.center.x))
                shiny::req(selected$var %in% names(prediction))
 
                shiny::withProgress(
@@ -769,7 +769,7 @@ imlplots = function(data, task, models) {
                  {
                    df$pred = centerPredictions(
                      predictions = prediction,
-                     centerpoint = selected$iceplot_center,
+                     center.x = selected$iceplot.center.x,
                      var = selected$var
                    )
                  }
@@ -803,11 +803,11 @@ imlplots = function(data, task, models) {
      )
 
     observeEvent({
-      input$gfx_package},
+      input$gfx.package},
       {
-        if (input$gfx_package == "ggplot2") {
+        if (input$gfx.package == "ggplot2") {
           selected$gfx.package = "ggplot2"
-        } else if (input$gfx_package == "plotly (resource intensive)") {
+        } else if (input$gfx.package == "plotly (resource intensive)") {
           selected$gfx.package = "plotly"
         }
       }
@@ -909,7 +909,7 @@ imlplots = function(data, task, models) {
       input$aleplot_mode
       input$data_selection_mode
       input$checks
-      input$iceplot_centerpoint},
+      input$iceplot_center_x},
       ignoreNULL = FALSE,
       {
         selected$var = input$var
@@ -918,7 +918,7 @@ imlplots = function(data, task, models) {
         selected$type = input$plot_type
         selected$aleplot_mode = input$aleplot_mode
         selected$features = input$checks
-        selected$iceplot_center = as.numeric(input$iceplot_centerpoint)
+        selected$iceplot.center.x = as.numeric(input$iceplot_center_x)
 
         if (input$data_selection_mode == "Plot all sampled observations") {
           selected$data.selection.mode = "sampling"

@@ -109,24 +109,24 @@ makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
   return(prediction)
 }
 
-centerPredictions = function(predictions, centerpoint, var) {
+centerPredictions = function(predictions, center.x, var) {
   # centers ICE predictions for centered ICE plots
   #
   # Args:
   #   predictions (data frame): outputs of makePredictionsIce...()
-  #   centerpoint (numeric): specifies the sampled knot / value on the
+  #   center.x (numeric): specifies the sampled knot / value on the
   #   horizontal axis where all ICE curves are 'pinched' to 0.
   #   var (string): selected variable of interest on horizontal axis
   # Returns:
-  #   see makePredictionsIce...(); centerpoint row values pinched to 0.
+  #   see makePredictionsIce...(); center.x row values pinched to 0.
   pred.var.dropped =
     predictions[, !(colnames(predictions) %in% var), with = FALSE]
   # predictions without variable column
-  match.index = match(centerpoint, predictions[ , 1, which = FALSE])
-  # match centerpoint index with according value in variable column
+  match.index = match(center.x, predictions[ , 1, which = FALSE])
+  # match center.x index with according value in variable column
   centered.var.dropped = apply(
     pred.var.dropped, 1, '-', pred.var.dropped[match.index, ])
-  # substract the row that contains the centerpoint from all rows
+  # substract the row that contains the center.x from all rows
   centered.var.dropped = do.call(rbind.data.frame, centered.var.dropped)
   # create data frame from list structure containing centered predictions
   pred.centered = cbind(
@@ -152,14 +152,14 @@ makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots) {
   #   if var2 is not NULL, one column with sampled unique values of var2
   #   one column with the according ALE effects
 
-  pred_function = function(X.model, newdata) {
+  pred.function = function(X.model, newdata) {
     as.numeric(predict(X.model, newdata))
   }
   obj = tryCatch(
     {ALEPlot::ALEPlot(
     data[ , -which(names(data) == target)],
     model,
-    pred.fun = pred_function,
+    pred.fun = pred.function,
     J = c(var1, var2),
     K = knots)},
     error = function(e) return(e),
