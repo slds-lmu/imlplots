@@ -10,12 +10,12 @@ classifIcePlot = function(pred, var, knots, lines, centered, centerpoint) {
   #   centerpoint (numeric): indicates the centerpoint to plot crosshair at
   # Returns:
   #   ggplot2 object
-  longformat_pred = melt(pred, id.vars = var) %>%
+  pred.longformat = melt(pred, id.vars = var) %>%
     mutate(class = sub('\\..*$','', variable))
   # create class variable by stripping away parts of string after the
   # dot e.g.(class1.pred1) -> (class1)
-  pdp_data = filter(longformat_pred, grepl('ave', variable))
-  iceplot_data = filter(longformat_pred, !grepl('ave', variable))
+  data.pdp = filter(pred.longformat, grepl('ave', variable))
+  data.ice = filter(pred.longformat, !grepl('ave', variable))
 
   if (lines <= 15) {
     line.alpha = 1
@@ -31,12 +31,12 @@ classifIcePlot = function(pred, var, knots, lines, centered, centerpoint) {
     line.size = 0.3
   }
   plot <- ggplot() +
-    geom_line(data = iceplot_data, aes_string(
+    geom_line(data = data.ice, aes_string(
       x = var, y = "value", group = "variable", color = "class"),
       size = line.size,
       alpha = line.alpha
     ) +
-    geom_line(data = pdp_data, aes_string(
+    geom_line(data = data.pdp, aes_string(
       x = var, y = "value", group = "class", color = "class"),
       size = 1, linetype = "dashed") +
     theme_pubr()
@@ -58,11 +58,11 @@ classifPartialDependencePlot = function(pred, var, target, knots) {
   #   target (string): selected target variable for predictons
   # Returns:
   #   ggplot2 object
-  longformat_pred = melt(pred, id.vars = var) %>%
+  pred.longformat = melt(pred, id.vars = var) %>%
     mutate(class = sub('\\..*$','', variable))
-  pdp_data = filter(longformat_pred, grepl('ave', variable))
+  data.pdp = filter(pred.longformat, grepl('ave', variable))
 
-  ggplot(data = pdp_data, aes_string(x = var, y = "value", group = "class",
+  ggplot(data = data.pdp, aes_string(x = var, y = "value", group = "class",
                                      color = "class")) +
     geom_line(size = 0.3) +
     labs(y = paste("Probabilityfor classifying", target, "as..", sep = " "),
