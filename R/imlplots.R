@@ -59,8 +59,6 @@
 #' Individual Conditional Expectation"
 #'
 #' Jones (2017). "mmpf: Monte-Carlo Methods for Prediction Functions "The R Journal Vol. XX/YY, AAAA 20ZZ
-
->>>>>>> christian
 #' @export
 
 imlplots = function(data, task, models) {
