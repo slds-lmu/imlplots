@@ -93,6 +93,7 @@ Further Examples
 ----------------
 
 -   Check out our [Wiki](https://github.com/juliafried/imlplots/wiki)
+-   [Vignette](https://github.com/juliafried/imlplots/raw/master/vignettes/imlplots.pdf)
 
 References
 ==========
