@@ -1,14 +1,12 @@
 ---
-title: "Vignette Title"
+title: "imlplots"
 author: "Julia Fried, Tobias Riebe, Christian Scholbeck"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
-  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{imlplots}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
-  chunk_output_type: console
+  %\VignetteEncoding{UTF-8}
 ---
 
 # imlplots: interpretable machine learning plots
