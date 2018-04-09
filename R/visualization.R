@@ -225,23 +225,22 @@ classifAlePlot = function(data, target, var) {
   #                         (ggplot2 or plotly)
   # Returns:
   #   ggplot2 or plotly object
-  aleplot.data = melt(data, id.vars = var)
 
-  if (any(class(data) == "warning") |
-      any(class(data) == "error")) {
+  if ("error" %in% data) {
     plot = ggplot() +
       annotate(
         geom = "text",
         x = 1, y = 1,
         label = paste(
-          "ALEPlot function returned error or warning message: \n",
-          data,
-          "You might have selected a factor (like) variable.
-          Second order effect ALE plots are not yet reliably supported for factor (like) variables."),
+          "ALEPlot function returned error or warning message. \n",
+          "See console output for more details."),
         size = 5
-        ) +
+      ) +
       theme_pubr()
   } else {
+    # no error or warning
+    aleplot.data = melt(data, id.vars = var)
+
     plot = ggplot(
       data = aleplot.data,
       aes_string(x = var, y = "value", group = "variable", color = "variable")) +

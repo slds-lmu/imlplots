@@ -196,7 +196,7 @@ makePredictionsAleClassif = function(data, target, model, var) {
   ale.outputs = lapply(1:length(var.levels), FUN = function(i) {
     pred.function = function(X.model, newdata) {
       predict(X.model, newdata, type = "prob")[, i]}
-
+    # get ALEPlot outputs for each class
     obj = tryCatch({
       ALEPlot::ALEPlot(
       data[ , -which(names(data) == target)],
@@ -208,15 +208,20 @@ makePredictionsAleClassif = function(data, target, model, var) {
     )
     return(obj)
   })
-
   # ALEPlot function not (yet) completely reliable
   error.check = vapply(ale.outputs, FUN = function(obj) {
-    (any(class(obj) == "warning") | any(class(obj) == "error"))},
+    bool = (any(class(obj) == "warning") | any(class(obj) == "error"))
+    # if any error or warning is found in a class prediction, print to console
+    if (bool == TRUE) {
+      warning("ALEPlot error msg:", call. = FALSE)
+      print(obj)}
+    return(bool)
+    },
     FUN.VALUE = logical(1))
   if (TRUE %in% error.check) {
-    invisible(return("error"))
+    return("error")
   } else {
-
+    # no errors or warnings
     var.values = ale.outputs[[1]]$x.values
     pred = lapply(ale.outputs, FUN = function(obj) return(obj$f.values))
     pred = do.call(cbind.data.frame, pred)
