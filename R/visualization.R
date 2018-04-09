@@ -130,13 +130,13 @@ regrIcePlot = function(pred, var, target, knots, lines, centered, center.x) {
       size = line.size,
       alpha = line.alpha) +
     geom_line(
-      data = pred,
-      aes_string(x = var, y = "preds.ave"),
+      data = iceplot.data[iceplot.data$variable == "preds.ave", ],
+      aes_string(x = var, y = "value", group = "variable"),
       color = "brown",
       size = 1) +
     labs(y =  target) +
     theme_pubr()
-  
+
   if (centered == TRUE) {
     if (is.factor(pred[[var]])) {
       center.x = match(center.x, levels(pred[[var]]))

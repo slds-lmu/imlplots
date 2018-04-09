@@ -62,12 +62,12 @@
 #' @export
 
 imlplots = function(data, task, models) {
-  
+
   if (!(is.vector(models))) {models = list(models)}
   assertDataFrame(data)
   assertClass(task, classes = "Task")
   lapply(models, FUN = function(elem) assertClass(elem, class = "WrappedModel"))
-  
+
   learner.models = lapply(models, function(x) x[["learner.model"]])
   learner.models.names = lapply(models, function(x) x[["learner"]][["id"]])
 
@@ -129,7 +129,7 @@ imlplots = function(data, task, models) {
           }),
           tabPanel(
             # plot settings and preview
-            title = "Settings", 
+            title = "Settings",
               fluidRow(
                 column(
                   width = 3,
@@ -266,13 +266,13 @@ imlplots = function(data, task, models) {
 
     # --------------------------------------------------------------------------
     # reactive values
-    
+
     df = reactiveValues(
       # reactive values for current (adjusted) data frame, available features
       # and prediction values
       values.adj = data, features = NULL, pred = NULL,
       table.rows.selected = NULL)
-    
+
     selected = reactiveValues(
       # reactive values only for selected values
       knots = 30, lines = 30)
@@ -756,7 +756,7 @@ imlplots = function(data, task, models) {
                knots = selected$knots,
                selected.rows = selected$table.rows,
                type = type)
-             
+
              if (selected$centered == TRUE) {
                # shiny::req(
                #   selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
@@ -790,7 +790,7 @@ imlplots = function(data, task, models) {
          session$reload()
        }
      )
-     
+
      observeEvent({
        # line sampling not necessary when individual observations are selected
        # or in ale plot mode
@@ -930,7 +930,7 @@ imlplots = function(data, task, models) {
                    "Plot individual observations") {
           selected$data.selection.mode = "individual"
         }
-        
+
         if (input$plot_type == "Individual Conditional Expectation") {
           selected$plot.type = "ice"
         } else if (input$plot_type == "Partial Dependence") {
@@ -1013,7 +1013,7 @@ imlplots = function(data, task, models) {
           selected$values.numeric = unlist(featureSliders(),
                                            function(x) return(as.numeric(x)))
         }
-       
+
         # now do the same with selectors
         if ((TRUE %in% lapply(featureSelectors(), is.null)) ||
             (TRUE %in% lapply(featureSelectors(), is.na))) {
