@@ -41,7 +41,6 @@ makePredictionsIceSampled = function(data, var, knots, lines, model, type) {
     )
   }
   var.vector = prediction[, 1, which = FALSE]
-  print(class(var.vector))
   if (is.numeric(var.vector)) {
     prediction[ , 1] = round(var.vector, digits = 5)
   } else {}
@@ -159,19 +158,19 @@ makePredictionsAleRegr = function(data, target, model, var1, var2 = NULL, knots)
   pred.function = function(X.model, newdata) {
     as.numeric(predict(X.model, newdata))
   }
-  obj = tryCatch(
-    {ALEPlot::ALEPlot(
-    data[ , -which(names(data) == target)],
-    model,
-    pred.fun = pred.function,
-    J = c(var1, var2),
-    K = knots)},
+  obj = tryCatch({
+    ALEPlot::ALEPlot(
+      data[ , -which(names(data) == target)],
+      model,
+      pred.fun = pred.function,
+      J = c(var1, var2),
+      K = knots)},
     error = function(e) return(e),
     warning = function(w) return(w)
   )
   # ALEPlot function not (yet) completely reliable
   if (any(class(obj) == "warning") | any(class(obj) == "error")) {
-    return(obj)
+    invisible(return("error"))
   } else {
     # no error or warning
     if (is.null(var2)) {
@@ -198,22 +197,34 @@ makePredictionsAleClassif = function(data, target, model, var) {
     pred.function = function(X.model, newdata) {
       predict(X.model, newdata, type = "prob")[, i]}
 
-    obj <- ALEPlot::ALEPlot(
+    obj = tryCatch({
+      ALEPlot::ALEPlot(
       data[ , -which(names(data) == target)],
       model,
       pred.fun = pred.function,
-      J = var
+      J = var)},
+      error = function(e) return(e),
+      warning = function(w) return(w)
     )
     return(obj)
   })
 
-  var.values = ale.outputs[[1]]$x.values
-  pred = lapply(ale.outputs, FUN = function(obj) return(obj$f.values))
-  pred = do.call(cbind.data.frame, pred)
-  pred = do.call(cbind.data.frame, list(var.values, pred))
-  colnames(pred) = c(var, var.levels)
+  # ALEPlot function not (yet) completely reliable
+  error.check = vapply(ale.outputs, FUN = function(obj) {
+    (any(class(obj) == "warning") | any(class(obj) == "error"))},
+    FUN.VALUE = logical(1))
+  if (TRUE %in% error.check) {
+    invisible(return("error"))
+  } else {
 
-  return(pred)
+    var.values = ale.outputs[[1]]$x.values
+    pred = lapply(ale.outputs, FUN = function(obj) return(obj$f.values))
+    pred = do.call(cbind.data.frame, pred)
+    pred = do.call(cbind.data.frame, list(var.values, pred))
+    colnames(pred) = c(var, var.levels)
+
+    return(pred)
+  }
 }
 
 makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots,

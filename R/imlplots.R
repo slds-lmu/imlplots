@@ -577,11 +577,15 @@ imlplots = function(data, task, models, model.check = "all.features") {
        ignoreInit = FALSE,
        ignoreNULL = FALSE,
        {
-         shiny::req(selected$lines)
          shiny::req(!is.null(df$pred))
-         shiny::req(!(TRUE %in% apply(df$pred, MARGIN = 2,
+         shiny::req((selected$var %in% names(df$pred)) ||
+                      "error" %in% df$pred)
+         shiny::req(selected$lines)
+         if (!"error" %in% df$pred) {
+           shiny::req(
+             !(TRUE %in% apply(df$pred, MARGIN = 2,
                                function(column) {NA %in% column})))
-         shiny::req(selected$var %in% names(df$pred))
+         }
 
          withProgress(
            message = "Rendering plot..",
@@ -617,9 +621,9 @@ imlplots = function(data, task, models, model.check = "all.features") {
                      knots = selected$knots)
                    return(plot)
                  } else if (selected$plot.type == "ale") {
-                   if (!is.null(selected$ale.interaction)) {
-                     shiny::req(selected$ale.interaction %in% colnames(df$pred))
-                   }
+                   # if (!is.null(selected$ale.interaction)) {
+                   #   shiny::req(selected$ale.interaction %in% colnames(df$pred))
+                   # }
                    plot = regrAlePlot(
                      data = df$pred,
                      target = target,
