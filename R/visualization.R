@@ -10,13 +10,10 @@ classifIcePlot = function(pred, var, knots, lines, centered, center.x) {
   #   center.x (numeric): indicates the centering point to plot crosshair at
   # Returns:
   #   ggplot2 object
-  pred.longformat = melt(pred, id.vars = var) %>%
+  iceplot.data = melt(pred, id.vars = var) %>%
     mutate(class = sub('\\..*$','', variable))
   # create class variable by stripping away parts of string after the
   # dot e.g.(class1.pred1) -> (class1)
-  data.pdp = filter(pred.longformat, grepl('ave', variable))
-  data.ice = filter(pred.longformat, !grepl('ave', variable))
-
   if (lines <= 15) {
     line.alpha = 1
     line.size = 0.7
@@ -31,13 +28,17 @@ classifIcePlot = function(pred, var, knots, lines, centered, center.x) {
     line.size = 0.3
   }
   plot = ggplot() +
-    geom_line(data = data.ice, aes_string(
-      x = var, y = "value", group = "variable", color = "class"),
+    geom_line(
+      data = iceplot.data,
+      aes_string(
+        x = var, y = "value", group = "variable", color = "class"),
       size = line.size,
       alpha = line.alpha
     ) +
-    geom_line(data = data.pdp, aes_string(
-      x = var, y = "value", group = "class", color = "class"),
+    geom_line(
+      data = iceplot.data[grep("ave", iceplot.data$variable), ],
+      aes_string(
+        x = var, y = "value", group = "class", color = "class"),
       size = 1, linetype = "dashed") +
     theme_pubr()
 
@@ -61,14 +62,15 @@ classifPartialDependencePlot = function(pred, var, target, knots) {
   #   target (string): selected target variable for predictons
   # Returns:
   #   ggplot2 object
-  pred.longformat = melt(pred, id.vars = var) %>%
+  iceplot.data = melt(pred, id.vars = var) %>%
     mutate(class = sub('\\..*$','', variable))
-  data.pdp = filter(pred.longformat, grepl('ave', variable))
+  pdp.data = iceplot.data[grep("ave", iceplot.data$variable), ]
 
-  ggplot(data = data.pdp, aes_string(x = var, y = "value", group = "class",
-                                     color = "class")) +
+  ggplot(
+    data = pdp.data,
+    aes_string( x = var, y = "value", group = "class", color = "class")) +
     geom_line(size = 0.3) +
-    labs(y = paste("Probabilityfor classifying", target, "as..", sep = " "),
+    labs(y = paste("Probability for for classif.", target, "as..", sep = " "),
          color = "Class") +
     theme(legend.position= "bottom", legend.direction = "vertical") +
     theme_pubr()
@@ -214,8 +216,7 @@ regrAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
   return(plot)
 }
 
-classifAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
-                          gfx.package = "ggplot2") {
+classifAlePlot = function(data, target, var) {
   # ALE plots for classification tasks
   #
   # Args:
@@ -227,9 +228,11 @@ classifAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
   #                         (ggplot2 or plotly)
   # Returns:
   #   ggplot2 or plotly object
+  aleplot.data = melt(data, id.vars = var)
+
   if (any(class(data) == "warning") |
       any(class(data) == "error")) {
-    ggplot() +
+    plot = ggplot() +
       annotate(
         geom = "text",
         x = 1, y = 1,
@@ -242,39 +245,14 @@ classifAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
         ) +
       theme_pubr()
   } else {
-    # no error or warning
-    if (is.null(var2)) {
-      # line plot
-      plot = ggplot(
-        data = data,
-        aes_string(
-          x = var1,
-          y = "ale.effect")) +
-        geom_line(size = 1, color = "steelblue") +
-        labs(y = paste("ALE main effect on", target), x = var1) +
-        theme_pubr()
-    } else {
-      # two variables
-      if (gfx.package == "ggplot2") {
-        # 2d heat map
-        plot = ggplot(
-          data = data, aes_string(x = var1, y = var2, color = "ale.effect")) +
-          stat_summary_2d(aes(z = ale.effect), fun = mean, bins = 50) +
-          theme_pubr()
-      } else if (gfx.package == "plotly") {
-        # 3d scatter
-        df = acast(data, get(var1) ~ get(var2), value.var = "ale.effect", drop = FALSE)
-        x = as.numeric(rownames(df))
-        y = as.numeric(colnames(df))
-
-        plot = plot_ly(x = x, y = y, z = df, type = "surface") %>%
-          layout(scene = list(
-            xaxis = list(title = var1),
-            yaxis = list(title = var2),
-            zaxis = list(title = paste("ALE effect on", target)))
-          )
-      }
-    }
+    plot = ggplot(
+      data = aleplot.data,
+      aes_string(x = var, y = "value", group = "variable", color = "variable")) +
+      geom_line(size = 0.3) +
+      labs(y = paste("ALE effect on probability for classif.", target, "as..", sep = " "),
+           color = "Class") +
+      theme(legend.position= "bottom", legend.direction = "vertical") +
+      theme_pubr()
   }
   return(plot)
 }

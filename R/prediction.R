@@ -140,7 +140,7 @@ centerPredictions = function(predictions, center.x, var) {
   return(pred.centered)
 }
 
-makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots) {
+makePredictionsAleRegr = function(data, target, model, var1, var2 = NULL, knots) {
   # create predictions for ALE plots
   #
   # Args:
@@ -155,7 +155,6 @@ makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots) {
   #   a data frame with one column containing all sampled unique values of var1;
   #   if var2 is not NULL, one column with sampled unique values of var2
   #   one column with the according ALE effects
-
   pred.function = function(X.model, newdata) {
     as.numeric(predict(X.model, newdata))
   }
@@ -188,4 +187,40 @@ makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots) {
     }
     return(df)
   }
+}
+
+makePredictionsAleClassif = function(data, target, model, var) {
+
+  var.levels = levels(data[[target]])
+
+  ale.outputs = lapply(1:length(var.levels), FUN = function(i) {
+    pred.function = function(X.model, newdata) {
+      predict(X.model, newdata, type = "prob")[, i]}
+
+    obj <- ALEPlot::ALEPlot(
+      data[ , -which(names(data) == target)],
+      model,
+      pred.fun = pred.function,
+      J = var
+    )
+    return(obj)
+  })
+
+  var.values = ale.outputs[[1]]$x.values
+  pred = lapply(ale.outputs, FUN = function(obj) return(obj$f.values))
+  pred = do.call(cbind.data.frame, pred)
+  pred = do.call(cbind.data.frame, list(var.values, pred))
+  colnames(pred) = c(var, var.levels)
+
+  return(pred)
+}
+
+makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots,
+                              type) {
+  if (type == "regr") {
+    pred = makePredictionsAleRegr(data, target, model, var1, var2, knots)
+  } else if (type == "classif") {
+    pred = makePredictionsAleClassif(data, target, model, var = var1)
+  }
+  return(pred)
 }
