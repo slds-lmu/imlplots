@@ -74,6 +74,8 @@ imlplots(data = boston, task = boston.task, models = mod.list)
 
 ## Code for Copy & Paste
 ```{r, eval=FALSE}
+library(imlplots)
+
 boston.task = makeRegrTask(data = boston, target = "medv")
 
 rf.mod = train("regr.randomForest", boston.task)
@@ -180,6 +182,14 @@ Please keep in mind, that the ALE plot has a different y-axis than the PDP and I
 knitr::include_graphics('pictures/settings5.PNG')
 ```
 
+For ALE plots you can swith between two `ALE Plot Mode`s. The `Main Effets` mode allows you to select one variable of interest and shows its interaction effect.
+The `Second Order Effects` setting allows to select another `ALE interaction variable` and therefore shows the effect for this extra variable too.
+If you select `plotly` as graphics package, the second order effects ALE plot will be a 3D plot.
+
+```{r echo=FALSE, out.width='100%'}
+knitr::include_graphics('pictures/ale3d.PNG')
+```
+
 The third tab `Plots` shows the IML plot in full screen via the sub-tab `Zoomed plot`.
 The sub-tab `Scatterplot` shows the filtered and unfiltered scatterplot between the `variable of interest` and the `target` variable of the model.
 
@@ -205,6 +215,8 @@ knitr::include_graphics('pictures/learner1.PNG')
 
 ### Code for Copy & Paste
 ```{r, eval=FALSE}
+library(imlplots)
+
 fire.task = makeRegrTask(data = fire, target = "area")
 
 fire.rf = train("regr.randomForest", fire.task)
@@ -244,6 +256,16 @@ knitr::include_graphics('pictures/settings7.PNG')
 knitr::include_graphics('pictures/settings8.PNG')
 ```
 
+### Code for Copy & Paste
+```{r, eval=FALSE}
+library(imlplots)
+
+titanic.task = makeClassifTask(data = titanic, target = "Survived")
+
+titanic.rf = train("classif.randomForest", titanic.task)
+
+imlplots(data = titanic, task = titanic.task, titanic.rf)
+```
 
 # References
 
