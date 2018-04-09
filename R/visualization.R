@@ -85,10 +85,12 @@ regrPartialDependencePlot = function(pred, var, target, knots) {
   #   target (string): selected target variable for predictons
   # Returns:
   #   ggplot2 object
+  print(pred)
+  print(is.factor(pred$chas))
   ggplot() +
     geom_line(
       data = pred,
-      aes_string(x = var, y = "preds.ave"),
+      aes_string(x = var, y = "preds.ave", group = factor(var)),
       color = "steelblue",
       size = 1) +
     labs(y =  target) +
