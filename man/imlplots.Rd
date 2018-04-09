@@ -2,36 +2,72 @@
 % Please edit documentation in R/imlplots.R
 \name{imlplots}
 \alias{imlplots}
-\title{Create IML plots}
+\title{Interactive Plots for Interpretable Machine Learning}
 \usage{
 imlplots(data, task, models)
 }
 \arguments{
-\item{data}{The data frame used for classification or regression model}
+\item{data}{A data frame of the test data.
+Has to contain exactly the same variables as the training data.}
 
-\item{task}{The mlr task, e.g. iris.task = makeClassifTask(data = iris,
-target = "Species")}
+\item{task}{The mlr task the models were being trained on,
+e.g. iris.task = makeClassifTask(data = iris, target = "Species").
+Classification and regression tasks are supported.}
 
-\item{models}{A list of mlr machine learning models, e.g. list(rf.mod, glm.mod)}
+\item{models}{A list of mlr trained models, e.g. list(rf.mod, glm.mod).
+
+You can provide differently tuned models of the same learner by assigning
+a unique ID to the learner, e.g.
+\code{makeLearner("regr.randomForest", id = "ownId")} \cr}
 }
 \description{
-With the imlplots() function an interactive Shiny Dashboard can be created. \cr
-Mandatory is the usage of the mlr package, for more infos go to
-\url{https://github.com/mlr-org} \cr
-Possible are classification or regression tasks.
-And three types of plots: Partial dependece plots (PDP), indiviudal conditional
-expectation (ICE) plots and accumulated local effects (ALE) plots
+The function \code{imlplots()} creates an interactive shiny based dashboard
+for visualizing the effects of statistical models.
+The utilization of mlr (Machine Learning in R) is necessary.
+For more infos go to \url{https://github.com/mlr-org}
+
+There are three types of plots: Partial Dependence Plots (PDP), Individual Conditional
+Expectation (ICE) plots and Accumulated Local Effects (ALE) plots.
 }
 \note{
-You need to install the GitHub version of ggplot2 to run the Shiny App
-successfully: devtools::install_github('hadley/ggplot2')
-If this version is not installed the plots are not displayed correctly
-for less than 30 knots.
+The plots display combinations of different inputs and outputs/predictions.
+Therefore they are highly sensitive to the trained and provided models.
 
-Models with the same learner need to have an unique ID
-Unique ID's can be given via the makeLearner function
-E.g. makeLearner("regr.randomForest", id = "ownId")
+The variable of interest provides variations of different inputs, while all other
+variables are held constant. You can look at how the predictions change,
+if you had provided different test data, by either filtering/subsetting
+the data or manually setting a variable to a fixed value for all observations.
+
+The function performs a basic check upon initialization,
+whether the provided models can be used to properly predict.
+If the check fails, it is recommended to manually test the model with the
+\code{marginalPrediction()} function of the mmpf package.
+}
+\examples{
+library(mlr)
+tsk = makeRegrTask(data = boston, target = "medv")
+mod.rf = train("regr.randomForest", task = tsk)
+mod.svm = train("regr.svm", task = tsk)
+imlplots(boston, tsk, list(mod.rf, mod.svm))
+
+}
+\references{
+Apley (2016). "Visualizing the Effects of Predictor Variables in Black Box Supervised
+Learning Models"
+
+Bischl et. al (2016). "mlr: Machine Learning in R." Journal of Machine Learning
+Research, 17(170), pp.
+
+Friedman, J.H. (2001). “Greedy Function Approximation: A Gradient Boosting
+Machine.” Annals of Statistics 29: 1189–1232.
+
+Goldstein et al. (2013). "Peeking Inside the Black Box: Visualizing Statistical Learning with Plots of
+Individual Conditional Expectation"
+
+Jones (2017). "mmpf: Monte-Carlo Methods for Prediction Functions "The R Journal Vol. XX/YY, AAAA 20ZZ
 }
 \author{
-Julia Fried, Tobias Riebe, Christian Scholbeck
+Julia Fried, Tobias Riebe, Christian Scholbeck; in cooperation with
+the working group for computational statistics at
+Ludwigs-Maximilians-University Munich.
 }

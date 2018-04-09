@@ -1,52 +1,91 @@
-#' Create IML plots
+#' Interactive Plots for Interpretable Machine Learning
 #' @description
-#' With the imlplots() function an interactive Shiny Dashboard can be created. \cr
-#' Mandatory is the usage of the mlr package, for more infos go to
-#' \url{https://github.com/mlr-org} \cr
-#' Possible are classification or regression tasks.
-#' And three types of plots: Partial dependece plots (PDP), indiviudal conditional
-#' expectation (ICE) plots and accumulated local effects (ALE) plots
-#' @param data The data frame used for classification or regression model
-#' @param task The mlr task, e.g. iris.task = makeClassifTask(data = iris,
-#' target = "Species")
-#' @param models A list of mlr machine learning models, e.g. list(rf.mod, glm.mod)
+#' The function \code{imlplots()} creates an interactive shiny based dashboard
+#' for visualizing the effects of statistical models.
+#' The utilization of mlr (Machine Learning in R) is necessary.
+#' For more infos go to \url{https://github.com/mlr-org}
+#'
+#' There are three types of plots: Partial Dependence Plots (PDP), Individual Conditional
+#' Expectation (ICE) plots and Accumulated Local Effects (ALE) plots.
+#' @param data A data frame of the test data.
+#' Has to contain exactly the same variables as the training data.
+#' @param task The mlr task the models were being trained on,
+#' e.g. iris.task = makeClassifTask(data = iris, target = "Species").
+#' Classification and regression tasks are supported.
+#' @param models A list of mlr trained models, e.g. list(rf.mod, glm.mod).
+#'
+#' You can provide differently tuned models of the same learner by assigning
+#' a unique ID to the learner, e.g.
+#' \code{makeLearner("regr.randomForest", id = "ownId")} \cr
+#'
+#' @examples
+#' library(mlr)
+#' tsk = makeRegrTask(data = boston, target = "medv")
+#' mod.rf = train("regr.randomForest", task = tsk)
+#' mod.svm = train("regr.svm", task = tsk)
+#' imlplots(boston, tsk, list(mod.rf, mod.svm))
+#'
 #' @note
-#' You need to install the GitHub version of ggplot2 to run the Shiny App
-#' successfully: devtools::install_github('hadley/ggplot2')
+
+#' The plots display combinations of different inputs and outputs/predictions.
+#' Therefore they are highly sensitive to the trained and provided models.
+#'
+#' The variable of interest provides variations of different inputs, while all other
+#' variables are held constant. You can look at how the predictions change,
+#' if you had provided different test data, by either filtering/subsetting
+#' the data or manually setting a variable to a fixed value for all observations.
+#'
+#' The function performs a basic check upon initialization,
+#' whether the provided models can be used to properly predict.
+#' If the check fails, it is recommended to manually test the model with the
+#' \code{marginalPrediction()} function of the mmpf package.
+#'
+#' @author Julia Fried, Tobias Riebe, Christian Scholbeck; in cooperation with
+#' the working group for computational statistics at
+#' Ludwigs-Maximilians-University Munich.
+#'
+#' @references
+#'
+#' Apley (2016). "Visualizing the Effects of Predictor Variables in Black Box Supervised
+#' Learning Models"
+#'
+#' Bischl et. al (2016). "mlr: Machine Learning in R." Journal of Machine Learning
+#' Research, 17(170), pp.
+#'
+#' Friedman, J.H. (2001). “Greedy Function Approximation: A Gradient Boosting
+#' Machine.” Annals of Statistics 29: 1189–1232.
+#'
+#' Goldstein et al. (2013). "Peeking Inside the Black Box: Visualizing Statistical Learning with Plots of
+#' Individual Conditional Expectation"
+#'
+#' Jones (2017). "mmpf: Monte-Carlo Methods for Prediction Functions "The R Journal Vol. XX/YY, AAAA 20ZZ
+
+>>>>>>> christian
 #' @export
 
 imlplots = function(data, task, models) {
 
-  # ~ Preprocessing ~ ----
-  # First we extract all relevant features from the input
-  # We get all models from the list of models
   if (!(is.vector(models))) {models = list(models)}
+  assertDataFrame(data)
+  assertClass(task, classes = "Task")
+  lapply(models, FUN = function(elem) assertClass(elem, class = "WrappedModel"))
 
   learner.models = lapply(models, function(x) x[["learner.model"]])
-
-  #' @note
-  #' Models with the same learner need to have an unique ID
-  #' Unique ID's can be given via the makeLearner function
-  #' E.g. makeLearner("regr.randomForest", id = "ownId")
-
   learner.models.names = lapply(models, function(x) x[["learner"]][["id"]])
 
-  # Next target and type are extracted from the task description
   target = getTaskDesc(task)$target
   type = getTaskDesc(task)$type
 
-  # We support numeric and factor variables
-  # Numeric and factor variables will be handled different (e.g. for filtering)
   features = names(data)[!names(data) %in% target]
   features.numeric = features[sapply(data[!names(data) %in% target], is.numeric)]
   features.factor = features[sapply(data[!names(data) %in% target], is.factor)]
 
-  do.call(modelCheck,
-    list(data = data, models = models, var = sample(features, 1))
-  )
-  # basic check if provided models throw error when using marginalPrediction(...)
+  do.call(
+    modelCheck,
+    list(data = data, models = models, var = sample(features, 1)))
+  # basic check whether provided models throw error when using
+  # marginalPrediction(...)
 
-  # ~ User Interfache ~ ----
   app.ui = dashboardPage(
     shinyjs::useShinyjs(),
     header = dashboardHeader(
@@ -58,7 +97,8 @@ imlplots = function(data, task, models) {
           "reload", "Reload application",
           width = "100%",
           icon("refresh"),
-          style = "font-size: 16px; color: #fff; background-color: #337ab7; border-color: #2e6da4; padding: 13px"))),
+          style = "font-size: 16px; color: #fff; background-color: #337ab7;
+                  border-color: #2e6da4; padding: 13px"))),
     sidebar = dashboardSidebar(disable = TRUE),
     body = dashboardBody(
       h2("Interactive plots for interpretable machine learning"),
@@ -66,13 +106,8 @@ imlplots = function(data, task, models) {
         tabBox(
           width = 12,
           height = NULL,
-
-          # >> Data ----
-          # In the first tab you can view the input data
-          # Also you can filter the data set, filtering will also change
-          # the IML plots
-
           tabPanel(title = "Data", {
+            # data table with filters
             fluidRow(
               column(
                 width = 12,
@@ -80,15 +115,13 @@ imlplots = function(data, task, models) {
                   width = NULL,
                   status = "primary",
                   title = "Data used for plotting ICE curves",
-                  # shows the data set
-                  selectInput("select_lines",
+                  selectInput("data_selection_mode",
                     "Select observations to sample from",
                     choices = c(
                       "Plot all sampled observations",
                       "Plot individual observations"
                     )
                   ),
-                  # Data table
                   div(style = "overflow-x: scroll",
                     DT::dataTableOutput("table")
                   )
@@ -96,32 +129,24 @@ imlplots = function(data, task, models) {
               )
             )
           }),
-
-          # >> Plot ----
-          # In this tab the 3 plots are shown
           tabPanel(
-            title = "Settings", {
+            # plot settings and preview
+            title = "Settings",
               fluidRow(
-                # Plot and plot characteristics
-                # This is the left column where you can change the plot
-                # settings, e.g. select the plot type
                 column(
                   width = 3,
+                  # left column with plot settings
                   box(
                     title = "Plot settings",
                     width = NULL,
-                    # Select one model out of your list of models
-                    selectInput("gfx_package", "Select graphics package",
+                    status = "primary",
+                    selectInput("gfx.package", "Select graphics package",
                       choices = c("ggplot2",
-                        "plotly (resource intensive)"
-                      )
+                        "plotly (resource intensive)")
                     ),
                     selectInput("models", "Choose predictive model",
                       choices = learner.models.names,
                       selected = 1, multiple = FALSE),
-
-                    # 3 different plots can be selected
-                    # The plot code is in another file: visualizations.R
                     selectInput(
                       "plot_type",
                       "Choose plot type",
@@ -130,21 +155,15 @@ imlplots = function(data, task, models) {
                         "Partial Dependence",
                         "Accumulated Local Effects"),
                       selected = 1, multiple = FALSE),
-
-                    # Select the variable of interest for the x-axis of the plot
-                    # one variable for PDP and ICE plot
-                    # max. 2 variables for ALE plot
-
                     conditionalPanel(
                       condition =
-                        "input.plot_type == 'Individual Conditional Expectation'",
+                        "input.plot_type ==
+                        'Individual Conditional Expectation'",
                       selectInput(
                         "iceplot_mode", "Ice plot mode",
                         choices = c("Regular",
-                          "Centered"
-                        ),
-                        selected = "Regular"
-                      )
+                          "Centered"),
+                        selected = "Regular")
                     ),
                     conditionalPanel(
                       condition =
@@ -152,49 +171,46 @@ imlplots = function(data, task, models) {
                         & input.iceplot_mode == 'Centered'",
                       uiOutput("iceplot_center")
                     ),
-
+                    conditionalPanel(
+                      condition =
+                        "input.plot_type == 'Accumulated Local Effects'",
+                      selectInput(
+                        "aleplot_mode", "ALE Plot Mode",
+                        choices = c("Main Effects",
+                                    "Second Order Effects"),
+                        selected = "ALE Main Effects")
+                    ),
                     selectInput(
                       "var", "Variable of interest",
                       choices = features,
                       selected = NULL, multiple = FALSE),
-
-                    # You can change the values of variables to check
-                    # how a specif value of a variable changes the output plot
-                    uiOutput("checkbox"),
-
-                    # Select how many knots are shown in the plot
+                    conditionalPanel(
+                      condition =
+                        "input.plot_type == 'Accumulated Local Effects' &
+                        input.aleplot_mode == 'Second Order Effects'",
+                      uiOutput("ale_interaction")
+                    ),
+                    uiOutput("checkbox"), # checkbox for adjusting the data
                     uiOutput("knots"),
-
-                    # Possibility to filter for less lines in the plot
                     uiOutput("lines")
                   ),
                   box(
-                    # If one (or more) variables are selected in the checkbox
-                    # the value of the variable(s) can be fixed to a value.
-                    # This value can be changed via a slider to check how
-                    # this change influences the output
                     title = "Adjust feature values",
                     width = NULL,
                     uiOutput("sliders"),
                     uiOutput("selectors")
                   )
                 ),
-
-                # Plot
-                # The plot is always visible, e.g. if the user scrolls down
-                # the plot follows
                 column(
                   width = 9,
+                  # right column with plot preview
                   fluidRow(
                     style = "position:fixed; width:70%;",
                     uiOutput("plot")
                   )
                 )
-              )}
+              )
           ),
-
-          # >> Zoomed Plot ----
-          # In the last tab you can review the plot in full width
           tabPanel(
             title = "Plots",
             tabsetPanel(
@@ -231,7 +247,6 @@ imlplots = function(data, task, models) {
               )
             )
           ),
-          # >> Learner Summary ----
           tabPanel(
             title = "Learner Summary",
             fluidRow(
@@ -249,90 +264,630 @@ imlplots = function(data, task, models) {
       )
     )
   )
-
-
-  # ~ Server ~ ----
   app.server = function(input, output, session) {
 
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    #                                                                          #
-    #                      Extract model relevant features                     #
-    #                                                                          #
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+    # --------------------------------------------------------------------------
+    # reactive values
 
-    observeEvent(input$reload, {
-      session$reload()
-    })
+    df = reactiveValues(
+      # reactive values for current (adjusted) data frame, available features
+      # and prediction values
+      values.adj = data, features = NULL, pred = NULL,
+      table.rows.selected = NULL)
 
-    # Reactive values for current data frame, available features and prediction
-    df = reactiveValues(values_adj = data, features = NULL, pred = NULL, table_rows_selected = NULL)
+    selected = reactiveValues(
+      # reactive values only for selected values
+      knots = 30, lines = 30)
 
-    observeEvent({
-      input$iceplot_mode}
-      , {
-        selected$iceplot_mode = input$iceplot_mode
-        if (input$iceplot_mode == "Centered" && selected$plot == "ice") {
-          selected$centered = TRUE
-        } else {
-          selected$centered = FALSE
-        }
-      })
-
-    observeEvent(input$gfx_package, {
-      if (input$gfx_package == "ggplot2") {
-        selected$gfx_package <- "ggplot2"
-      } else if (input$gfx_package == "plotly (resource intensive)") {
-        selected$gfx_package <- "plotly"
-      }
-    })
-
-    # Select model for marginal prediction function based on selected string
-    # in UI
-    observeEvent(input$models, {
-      for (i in 1:length(learner.models.names)) {
-        model = learner.models[[i]]
-        if (input$models == learner.models.names[[i]]) {
-          selected$model = model
-        } else {}
-      }
-    })
-
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    #                                                                          #
-    #                              Slider options                              #
-    #                                                                          #
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+    # --------------------------------------------------------------------------
+    # ui outputs
 
     output$iceplot_center = renderUI({
-      knot_values <- df$pred[, 1, with = FALSE]
+      knot.values = df$pred[, 1]
+      # sampled values appearing on the horizontal axis in ICE and PDP
       selectInput(
-        "iceplot_centerpoint",
-        "Select horizontal axis value to center ICE curves around (depends on knots)",
-        choices = knot_values, selected = selected$iceplot_centerpoint
-      )
+        "iceplot_center_x",
+        "Select horizontal axis value to center ICE curves around
+        (depends on knots)",
+        choices = knot.values, selected = selected$iceplot.center.x)
     })
 
-    observeEvent(input$var, {
-      df$values_adj = data
+    output$ale_interaction = renderUI({
+      variable.options = features[!features %in% c(selected$var)]
+      selectInput("ale_interaction_var",
+                  "ALE interaction variable",
+                  choices = variable.options)
     })
 
-    # Adjusts internal variable for plot type based on selected string in UI
+    output$checkbox = renderUI({
+      # checkbox for adjustable features
+      checkboxGroupInput("checks", "Select adjustable features",
+                         choices = df$features.unused)
+    })
+
+    sliderList = reactive({
+      # list of strings with input$[feature] for numeric features
+      lapply(selected$features.numeric, FUN = function(feature) {
+        text = paste("input$", feature, sep = "")})
+    })
+
+    selectorList = reactive({
+      # list of strings with input$[feature] for factor features
+      lapply(selected$features.factor, FUN = function(feature) {
+        text = paste("input$", feature, sep = "")})
+    })
+
+    featureSliders = reactive({
+      # make reactive list of slider input expressions (for numeric variables)
+      # by parsing strings from slider.list
+      # use this function to capture inputs from feature sliders
+      lapply(sliderList(), FUN = function(x) eval(parse(text = x)))
+    })
+
+    featureSelectors = reactive({
+      # make reactive list of selector input expressions (for factor variables)
+      # by parsing strings from selector.list
+      # use this function to capture inputs from feature selectors
+      lapply(selectorList(), FUN = function(x) eval(parse(text = x)))
+    })
+
+    output$knots = renderUI({
+      if (is.null(selected$knots)) {
+        selected$knots = 30
+      }
+      # setting to 30 upon initialization; setting init value in selected
+      # does not work
+      if (selected$plot.type == "ale") {
+        sliderInput(
+          "knots",
+          "Number of intervals into which the predictor range is divided",
+          min = 1,
+          max = 100,
+          value = selected$knots,
+          step = 1)
+      } else {
+        sliderInput(
+          "knots",
+          "Number of knots for each line",
+          min = 1,
+          max = nrow(df$values.filtered),
+          value = selected$knots,
+          step = 1)
+      }
+    })
+
+    output$lines = renderUI({
+      if (is.null(selected$lines)) {
+        selected$lines = 30
+      }
+      # setting to 30 upon initialization; setting init value in selected
+      # does not work
+
+      sliderInput(
+        "lines",
+        "Number of individual observations (lines) to sample from data",
+        min = 1,
+        max = nrow(df$values.filtered),
+        value = selected$lines,
+        step = 1)
+    })
+
+     output$learner_summary = renderPrint({
+      capture.output(selected$model)
+    })
+
+     output$table = DT::renderDataTable({
+       shiny::req(!is.null(selected$datatable.select))
+       DT::datatable(
+         df$values.adj,
+         filter = list(position = "top", clear = TRUE, plain = TRUE),
+         selection = selected$datatable.select
+       )},
+       server = TRUE
+     )
+
+    # --------------------------------------------------------------------------
+    # plot outputs and event reactive functions
+
+     output$scatter_unfiltered_basic = renderPlot({
+       # render ggplot2 object of unfiltered scatter plot
+       scatterPlotUnfiltered()},
+       width = 800,
+       height = 400
+     )
+
+     output$scatter_unfiltered_plotly = renderPlotly({
+       # render plotly object of unfiltered scatter plot
+       p = plotly_build(scatterPlotUnfiltered())
+       p$elementId = NULL
+       p$x$layout$width = 800
+       p$x$layout$height = 400
+       p$width = NULL
+       p$height = NULL
+       return(p)
+     })
+     # both ggplot2 and plotly versions are ready to be rendered upon
+     # changing the UI selections; lazy loading keeps one version from not
+     # being rendered
+
+     output$scatter_filtered_basic = renderPlot({
+       # render ggplot2 object of filtered scatter plot
+       scatterPlotFiltered()},
+       width = 800,
+       height = 400
+     )
+     output$scatter_filtered_plotly = renderPlotly({
+       # render plotly object of filtered scatter plot
+       p = plotly_build(scatterPlotFiltered())
+       p$elementId = NULL
+       p$x$layout$width = 800
+       p$x$layout$height = 400
+       p$width = NULL
+       p$height = NULL
+       return(p)
+     })
+     # both ggplot2 and plotly versions are ready to be rendered upon
+     # changing the UI selections; lazy loading keeps one version from not
+     # being rendered
+
+     output$scatter_unfiltered = renderUI({
+       # decide which rendered unfiltered scatter plot to display in UI based on
+       # selected$gfx.package
+       if (selected$gfx.package == "plotly") {
+         plotlyOutput("scatter_unfiltered_plotly")
+       } else if (selected$gfx.package == "ggplot2") {
+         plotOutput("scatter_unfiltered_basic")
+       }
+     })
+
+     output$scatter_filtered = renderUI({
+       # decide which rendered filtered scatter plot to display in UI based on
+       # selected$gfx.package
+       if (selected$gfx.package == "plotly") {
+         plotlyOutput("scatter_filtered_plotly")
+       } else if (selected$gfx.package == "ggplot2") {
+         plotOutput("scatter_filtered_basic")
+       }
+     })
+
+     scatterPlotUnfiltered = eventReactive({
+       # plot function for unfiltered scatter plot
+       selected$table.rows
+       selected$plot.type
+       selected$aleplot.mode
+       selected$gfx.package
+       selected$var
+       selected$ale.interaction},
+       ignoreNULL = FALSE,
+       {
+         if (selected$plot.type == "ale" &&
+             selected$aleplot.mode == "Second Order Effects" &&
+             selected$gfx.package == "plotly") {
+           scatterPlot3D(
+             data = data, target = target,
+             var = c(selected$var, selected$ale.interaction),
+             highlighted = selected$table.rows)
+         } else {
+           scatterPlot(
+             data = data, target = target,
+             var = selected$var,
+             highlighted = selected$table.rows)
+         }
+       }
+     )
+
+     scatterPlotFiltered = eventReactive({
+       # plot function for filtered scatter plot
+       df$values.filtered
+       selected$table.rows
+       selected$plot.type
+       selected$aleplot.mode
+       selected$gfx.package
+       selected$var
+       selected$ale.interaction},
+       ignoreNULL = FALSE,
+       {
+         if (selected$plot.type == "ale" &&
+             selected$aleplot.mode == "Second Order Effects" &&
+             selected$gfx.package == "plotly") {
+           scatterPlot3D(
+             data = df$values.filtered, target = target,
+             var = c(selected$var, selected$ale.interaction),
+             highlighted = selected$table.rows)
+         } else {
+           scatterPlot(
+             data = df$values.filtered, target = target,
+             var = selected$var,
+             highlighted = selected$table.rows)
+         }
+       })
+
+     output$iml_plotly_plot = renderPlotly({
+       # rendering plotly version of imlplot output
+       p = plotly_build(imlPlot())
+       p$elementId = NULL
+       p$x$layout$width = 800
+       p$x$layout$height = 400
+       p$width = NULL
+       p$height = NULL
+       return(p)
+     })
+
+     output$iml_basic_plot = renderPlot({
+       # rendering ggplot2 version of imlplot output
+       imlPlot()},
+       width = 800,
+       height = 400
+     )
+
+     output$plot = renderUI({
+       # decide which plot to display in UI based on selected$gfx.package
+       if (selected$gfx.package == "plotly") {
+         plotlyOutput("iml_plotly_plot")
+       } else if (selected$gfx.package == "ggplot2") {
+         plotOutput("iml_basic_plot")
+       }
+     })
+
+     output$zoomed_plotly_plot = renderPlotly({
+       # render plotly version of zoomed imlplot
+       p = plotly_build(imlPlot())
+       p$elementId = NULL
+       p$x$layout$width = 1200
+       p$x$layout$height = 600
+       p$width = NULL
+       p$height = NULL
+       return(p)
+     })
+
+     output$zoomed_basic_plot = renderPlot({
+       # render ggplot2 version of zoomed imlplot
+       imlPlot()},
+       width = 1200,
+       height = 600
+     )
+
+     output$zoomed_plot = renderUI({
+       # decide which zoomed plot version to display in UI based on
+       # selected$gfx.package
+       if (selected$gfx.package == "plotly") {
+         plotlyOutput("zoomed_plotly_plot")
+       } else if (selected$gfx.package == "ggplot2") {
+         plotOutput("zoomed_basic_plot")
+       }
+     })
+
+     imlPlot = eventReactive({
+       # plots the predicted values by calling predefined plot functions with
+       # current reactive values
+       df$pred
+       df$values.filtered
+       selected$table.rows
+       selected$data.selection.mode
+       selected$plot.type
+       selected$iceplot.center.x
+       selected$gfx.package
+       selected$var
+       selected$ale.interaction
+       selected$knots
+       selected$lines},
+       ignoreInit = FALSE,
+       ignoreNULL = FALSE,
+       {
+         shiny::req(selected$lines)
+         shiny::req(!is.null(df$pred))
+         shiny::req(!(TRUE %in% apply(df$pred, MARGIN = 2,
+                               function(column) {NA %in% column})))
+         shiny::req(selected$var %in% names(df$pred))
+
+         withProgress(
+           message = "Rendering plot..",
+           detail = "Please wait.",
+           min = 0, max = 100, value = 100,
+           {
+             if (nrow(df$values.filtered) == 0) {
+               plot = placeholderPlot()
+               return(plot)
+             } else if (
+               ((selected$data.selection.mode == "individual") &&
+               (is.null(selected$table.rows)) &&
+               (!selected$plot.type == "ale"))) {
+               plot = placeholderPlot()
+               return(plot)
+             } else {
+               if (type == "regr") {
+                 if (selected$plot.type == "ice") {
+                   plot = regrIcePlot(
+                     pred = df$pred,
+                     var = selected$var,
+                     target  = target,
+                     knots = selected$knots,
+                     lines = selected$lines,
+                     centered = selected$centered,
+                     center.x = selected$iceplot.center.x
+                   )
+                   return(plot)
+                 } else if (selected$plot.type == "pdp") {
+                   plot = regrPartialDependencePlot(
+                     pred = df$pred,
+                     var = selected$var,
+                     target = target,
+                     knots = selected$knots
+                   )
+                   return(plot)
+                 } else if (selected$plot.type == "ale") {
+
+                   plot = regrAlePlot(
+                     data = df$pred,
+                     target = target,
+                     var1 = selected$var,
+                     var2 = selected$ale.interaction,
+                     knots = selected$knots,
+                     gfx.package = selected$gfx.package
+                   )
+                   return(plot)
+                 }
+               } else if (type == "classif") {
+                 if (selected$plot.type == "ice") {
+                   plot = classifIcePlot(
+                     pred = df$pred,
+                     var = selected$var,
+                     knots = selected$knots,
+                     lines = selected$lines,
+                     centered = selected$centered,
+                     center.x = selected$iceplot.center.x
+                   )
+                   return(plot)
+                 } else if (selected$plot.type == "pdp") {
+
+                   plot = classifPartialDependencePlot(
+                     pred = df$pred,
+                     var = selected$var,
+                     target = target,
+                     knots = selected$knots
+                   )
+                   return(plot)
+                 } else if (selected$plot.type == "ale") {
+
+                   plot = classifAlePlot(
+                     data = df$pred,
+                     target = target,
+                     var1 = selected$var,
+                     var2 = selected$ale.interaction,
+                     knots = selected$knots,
+                     gfx.package = selected$gfx.package
+                   )
+                   return(plot)
+                 }
+               }
+             }
+           }
+         ) # ending: withProgress(...)
+       })
+
+    # --------------------------------------------------------------------------
+    # Observers
+
+     observeEvent({
+       # observer for calculating predictions
+       df$values.filtered
+       selected$table.rows
+       selected$data.selection.mode
+       selected$iceplot.center.x
+       selected$centered
+       selected$model
+       selected$plot.type
+       selected$var
+       selected$ale.interaction
+       selected$knots
+       selected$lines},
+       {
+         shiny::req(nrow(df$values.filtered) > 0)
+         shiny::req(!(TRUE %in% apply(df$values.filtered, MARGIN = 2,
+                               function(column) {NA %in% column})))
+         if (selected$plot.type == "ale") {
+           # use ALEPlot::ALEPlot(..) to predict for ale
+           shiny::withProgress(
+             message = "Calculating Predictions..",
+             detail = "Please wait.",
+             min = 0, max = 100, value = 100,
+             {
+               df$pred = makePredictionsAle(
+                 data = df$values.filtered,
+                 target = target,
+                 model = selected$model,
+                 var1 = selected$var,
+                 var2 = selected$ale.interaction,
+                 knots = selected$knots
+               )
+             }
+           )
+         } else {
+           # use mmpf::marginalPrediction(..) to predict for ice/pdp
+           shiny::req(nrow(df$values.filtered) >= selected$knots)
+           shiny::req(nrow(df$values.filtered) >= selected$lines)
+
+           if (selected$data.selection.mode == "sampling") {
+             # Sample selected$lines from df$values.filtered
+             shiny::withProgress(
+               message = "Calculating predictions..",
+               detail = "Please wait.",
+               min = 0, max = 100, value = 100,
+               {
+                 prediction = makePredictionsIceSampled(
+                   data = df$values.filtered,
+                   var = selected$var,
+                   model = selected$model,
+                   knots = selected$knots,
+                   lines = selected$lines,
+                   type = type)
+               }
+             )
+             if (selected$centered == TRUE) {
+               # shiny::req(
+               #   selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
+               shiny::req(!is.null(selected$iceplot.center.x))
+               shiny::req(!is.na(selected$iceplot.center.x))
+               shiny::req(selected$var %in% names(prediction))
+
+               shiny::withProgress(
+                 message = "Centering predictions..",
+                 detail = "Please wait.",
+                 min = 0, max = 100, value = 100,
+                 {
+                   df$pred = centerPredictions(
+                     predictions = prediction,
+                     center.x = selected$iceplot.center.x,
+                     var = selected$var)
+                 }
+               )
+             } else if (selected$centered == FALSE) {
+               df$pred = prediction
+             }
+           } else if (selected$data.selection.mode == "individual") {
+             # mmpf::marginalPrediction(...) marginalizes only over selected
+             # observations
+             shiny::req(!is.null(selected$table.rows))
+             shiny::req(selected$table.rows %in% as.numeric(
+               row.names(df$values.filtered)))
+
+             prediction = makePredictionsIceSelected(
+               data = df$values.filtered,
+               var = selected$var,
+               model = selected$model,
+               knots = selected$knots,
+               selected.rows = selected$table.rows,
+               type = type)
+
+             if (selected$centered == TRUE) {
+               # shiny::req(
+               #   selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
+               shiny::req(!is.null(selected$iceplot.center.x))
+               shiny::req(!is.na(selected$iceplot.center.x))
+               shiny::req(selected$var %in% names(prediction))
+
+               shiny::withProgress(
+                 message = "Centering predictions..",
+                 detail = "Please wait.",
+                 min = 0, max = 100, value = 100,
+                 {
+                   df$pred = centerPredictions(
+                     predictions = prediction,
+                     center.x = selected$iceplot.center.x,
+                     var = selected$var)
+                 }
+               )
+             } else if (selected$centered == FALSE) {
+               df$pred = prediction
+             }
+           }
+         }
+       }
+     )
+
+     observeEvent({
+       # reload button action on top right corner
+       input$reload},
+       {
+         session$reload()
+       }
+     )
+
+     observeEvent({
+       # line sampling not necessary when individual observations are selected
+       # or in ale plot mode
+       selected$data.selection.mode
+       selected$plot.type},
+       {
+         req(!is.null(selected$data.selection.mode))
+         req(!is.null(selected$plot.type))
+         if (selected$data.selection.mode == "individual" ||
+             selected$plot.type == "ale") {
+           shinyjs::disable("lines")
+         } else {
+           shinyjs::enable("lines")
+         }
+       }
+     )
+
+     observeEvent({
+       input$iceplot_mode
+       selected$plot.type},
+       ignoreNULL = FALSE,
+       {
+         if (input$iceplot_mode == "Centered" && selected$plot.type == "ice") {
+           selected$centered = TRUE
+         } else {
+           selected$centered = FALSE
+         }
+       }
+     )
+
     observeEvent({
-      plot.settings$type}
-      , {
-        if (plot.settings$type == "Individual Conditional Expectation") {
-          selected$plot = "ice"
-        } else if (plot.settings$type == "Partial Dependence") {
-          selected$plot = "pdp"
-        } else if (plot.settings$type == "Accumulated Local Effects") {
-          selected$plot = "ale"
+      input$gfx.package},
+      {
+        if (input$gfx.package == "ggplot2") {
+          selected$gfx.package = "ggplot2"
+        } else if (input$gfx.package == "plotly (resource intensive)") {
+          selected$gfx.package = "plotly"
         }
-      })
+      }
+    )
 
-    # Differentiates checked input features into numeric and factor features
     observeEvent({
-      input$checks}, ignoreNULL = FALSE
-      , {
+      # select model for marginal prediction function based on selected string
+      # in UI
+      input$models},
+      {
+        for (i in 1:length(learner.models.names)) {
+          model = learner.models[[i]]
+          if (input$models == learner.models.names[[i]]) {
+            selected$model = model
+          } else {}
+        }
+      }
+    )
+
+    observeEvent({
+      input$ale_interaction_var
+      selected$plot.type
+      input$aleplot_mode
+      selected$gfx.package},
+      ignoreNULL = FALSE,
+      {
+        if (selected$plot.type == "ale" &&
+            input$aleplot_mode == "Second Order Effects" &&
+            selected$gfx.package == "ggplot2") {
+
+          selected$ale.interaction = input$ale_interaction_var
+
+        } else if (selected$plot.type == "ale" &&
+                   input$aleplot_mode == "Second Order Effects" &&
+                   selected$gfx.package == "plotly") {
+
+          selected$ale.interaction = input$ale_interaction_var
+
+        } else {
+          selected$ale.interaction = NULL
+        }
+      }
+    )
+
+    observeEvent({
+      # reset the reactive data values when variable of interest changes
+      input$var},
+      {
+        df$values.adj = data
+      }
+    )
+
+    observeEvent({
+      # differentiates checked input features into numeric and factor features;
+      # important, because factor features are adjusted with selectors and need
+      # to be provided the right values when adjusting
+      input$checks},
+      ignoreNULL = FALSE,
+      {
         numerics = c()
         factors = c()
         if (is.null(input$checks)) {
@@ -349,104 +904,173 @@ imlplots = function(data, task, models) {
           selected$features.numeric = numerics
           selected$features.factor = factors
         }
-      })
+      }
+    )
 
-    # Reactive values for plot settings
-    plot.settings = reactiveValues(knots = 30, lines = 30)
-
-    # Transfers input plot settings from UI to reactive values
     observeEvent({
+      # set reactive values to UI values
       input$var
       input$knots
       input$lines
-      input$modifdata
-      input$plot_type}
-      , {
-        plot.settings$var = input$var
-        plot.settings$knots = input$knots
-        plot.settings$lines = input$lines
-        plot.settings$modifdata = input$modifdata
-        plot.settings$type = input$plot_type
-      })
+      input$plot_type
+      input$aleplot_mode
+      input$data_selection_mode
+      input$checks
+      input$iceplot_center_x},
+      ignoreNULL = FALSE,
+      {
+        selected$var = input$var
+        selected$knots = input$knots
+        selected$lines = input$lines
+        selected$aleplot.mode = input$aleplot_mode
+        selected$features = input$checks
+        selected$iceplot.center.x = input$iceplot_center_x
 
-    # captures values of fixed slider for plotting the vertical line
+        if (input$data_selection_mode == "Plot all sampled observations") {
+          selected$data.selection.mode = "sampling"
+        } else if (input$data_selection_mode ==
+                   "Plot individual observations") {
+          selected$data.selection.mode = "individual"
+        }
 
-    # adjusts available features for modification based on the selected variable
-    # of interest
-    observeEvent(plot.settings$var, {
-      df$features = names(data)[!names(data) %in% c(target, plot.settings$var)]
-    })
+        if (input$plot_type == "Individual Conditional Expectation") {
+          selected$plot.type = "ice"
+        } else if (input$plot_type == "Partial Dependence") {
+          selected$plot.type = "pdp"
+        } else if (input$plot_type == "Accumulated Local Effects") {
+          selected$plot.type = "ale"
+        }
+      }
+    )
 
-    selected = reactiveValues()
-
-    # capture slider and selector values
-    # set reactive values to NULL if input contains NA or NULL values
-    # this sometimes happens when the input value is evaluated before the UI has
-    # finished rendering
     observeEvent({
-      feature.sliders()
-      feature.selectors()}
-      , {
-        if ((TRUE %in% lapply(feature.sliders(), is.null)) ||
-            (TRUE %in% lapply(feature.sliders(), is.na))) {
+      selected$data.selection.mode
+      input$table_rows_all
+      input$table_rows_selected},
+      ignoreNULL = FALSE,
+      {
+        if (selected$data.selection.mode == "sampling") {
+
+          selected$datatable.select = list(mode = "none")
+          df$table.rows.filtered = input$table_rows_all
+          # use all filtered observations from data table
+          selected$table.rows = NULL
+
+        } else if (selected$data.selection.mode == "individual") {
+          # only the selected observations in data are marginalized over,
+          # so sampling observations/lines is not necessary
+          selected$datatable.select = list(mode = "multiple")
+          df$table.rows.filtered = input$table_rows_all
+          # use all filtered observations from data table
+          selected$table.rows = input$table_rows_selected
+          # row indicies of selected observations in data table
+        }
+      }
+    )
+
+    observeEvent({
+      # available features for adjusting the data cannot contain variable
+      # of interest and (if ale selected) ale interaction variable
+      selected$var
+      selected$ale.interaction},
+      ignoreNULL = FALSE,
+      {
+        df$features.unused = names(data)[!names(data) %in% c(
+          target, selected$var,
+          selected$ale.interaction)]
+      }
+    )
+
+    proxy = DT::dataTableProxy("table")
+
+    observeEvent({
+      df$table.rows.filtered},
+      {
+        DT::selectRows(proxy, list())
+      }
+    )
+
+    observeEvent({
+      df$table.rows.filtered
+      df$values.adj},
+      ignoreNULL = FALSE,
+      ignoreInit = FALSE,
+      {
+        df$values.filtered = df$values.adj[df$table.rows.filtered, ]
+      }
+    )
+
+    observeEvent({
+      # capture slider and selector values
+      # set reactive values to NULL if input contains NA or NULL values
+      # this sometimes happens when the input value is evaluated before the UI
+      # has finished rendering
+      featureSliders()
+      featureSelectors()},
+      {
+        if ((TRUE %in% lapply(featureSliders(), is.null)) ||
+            (TRUE %in% lapply(featureSliders(), is.na))) {
           selected$values.numeric = NULL
         } else {
-          selected$values.numeric = unlist(feature.sliders(),
-            function(x) return(as.numeric(x)))
+          selected$values.numeric = unlist(featureSliders(),
+                                           function(x) return(as.numeric(x)))
         }
-        if ((TRUE %in% lapply(feature.selectors(), is.null)) ||
-            (TRUE %in% lapply(feature.selectors(), is.na))) {
+
+        # now do the same with selectors
+        if ((TRUE %in% lapply(featureSelectors(), is.null)) ||
+            (TRUE %in% lapply(featureSelectors(), is.na))) {
           selected$values.factor = NULL
         } else {
-          selected$values.factor = unlist(feature.selectors(),
-            function(x) return(as.numeric(x)))
+          selected$values.factor = unlist(featureSelectors(),
+                                          function(x) return(as.numeric(x)))
         }
-      })
+      }
+    )
 
-    # update numeric feature data when user adjusts sliders
-    observeEvent(ignoreNULL = FALSE, {
+    observeEvent({
+      # update numeric feature data when user adjusts sliders
       selected$values.numeric
-      selected$features.numeric}
-      , {
+      selected$features.numeric},
+      ignoreNULL = FALSE,
+      {
         if (!(is.null(selected$values.numeric))) {
           for (i in 1:length(selected$features.numeric)) {
             numeric.feature = selected$features.numeric[i]
             numeric.value = selected$values.numeric[i]
-            df$values_adj[numeric.feature] = numeric.value
+            df$values.adj[numeric.feature] = numeric.value
           }
         }
-        unselected.features = df$features[!df$features %in% c(selected$features)]
-        df$values_adj[unselected.features] = data[unselected.features]
-      })
+        unselected.features = df$features.unused[
+          !df$features.unused %in% c(selected$features)]
+        df$values.adj[unselected.features] = data[unselected.features]
+      }
+    )
 
-    # update factor feature data when user adjusts selectors
-    observeEvent(ignoreNULL = FALSE, {
+    observeEvent({
+      # update factor feature data when user adjusts selectors
       selected$values.factor
-      selected$features.factor}
-      , {
+      selected$features.factor},
+      ignoreNULL = FALSE,
+      {
         if (!(is.null(selected$features.factor))) {
           for (j in 1:length(selected$features.factor)) {
             factor.feature = selected$features.factor[j]
             factor.value = selected$values.factor[j]
             factor.levels = levels(data[[factor.feature]])
-            df$values_adj[factor.feature] = factor(x = factor.value,
-              levels = factor.levels)
+            df$values.adj[factor.feature] = factor(x = factor.value,
+                                                   levels = factor.levels)
           }
         }
-        unselected.features = df$features[!df$features %in% c(selected$features)]
-        df$values_adj[unselected.features] = data[unselected.features]
-      })
+        unselected.features =
+          df$features.unused[!df$features.unused %in% c(selected$features)]
+        df$values.adj[unselected.features] = data[unselected.features]
+      }
+    )
 
-    # Checkbox for adjustable features
-    output$checkbox = renderUI({
-      checkboxGroupInput("checks", "Select adjustable features",
-        choices = df$features)
-    })
-
-    # Rendering feature sliders
     observeEvent({
-      selected$features.numeric}
-      , {
+      # rendering feature sliders for numeric features
+      selected$features.numeric},
+      {
         output$sliders = renderUI({
           if (is.null(selected$features.numeric)) {
           } else {
@@ -461,17 +1085,13 @@ imlplots = function(data, task, models) {
             do.call(tagList, sliders)
           }
         })
-      })
+      }
+    )
 
-    # Transfers checked features from UI to reactive values
-    observeEvent(input$checks, ignoreNULL = FALSE, {
-      selected$features = input$checks
-    })
-
-    # Render feature selectors
     observeEvent({
-      selected$features.factor}
-      , {
+      # render feature selectors
+      selected$features.factor},
+      {
         output$selectors = renderUI({
           if (is.null(selected$features.factor)) {
           } else {
@@ -483,453 +1103,10 @@ imlplots = function(data, task, models) {
             do.call(tagList, selectors)
           }
         })
-      })
-
-
-    # list of strings with input$[feature] for numeric features
-    slider.list = reactive({
-      lapply(selected$features.numeric, FUN = function(feature) {
-        text = paste("input$", feature, sep = "")})
-    })
-
-
-    # list of strings with input$[feature] for factor features
-    selector.list = reactive({
-      lapply(selected$features.factor, FUN = function(feature) {
-        text = paste("input$", feature, sep = "")})
-    })
-
-    # make reactive list of slider input expressions by parsing strings from
-    # slider.list
-    # use this function to capture inputs from feature sliders
-    feature.sliders = reactive({
-      lapply(slider.list(), FUN = function(x) eval(parse(text = x)))
-    })
-
-    feature.selectors = reactive({
-      lapply(selector.list(), FUN = function(x) eval(parse(text = x)))
-    })
-
-    # >> Data ----
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    #                                                                          #
-    #                               Data filters                               #
-    #                                                                          #
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
-    output$knots <- renderUI({
-      if (is.null(plot.settings$knots)) {
-        plot.settings$knots = 30
       }
-      # setting to 30 upon initialization; setting init value in plot.settings
-      # does not work
-
-      sliderInput(
-        "knots",
-        "Number of knots for each line",
-        min = 1,
-        max = nrow(df$values_filtered),
-        value = plot.settings$knots,
-        step = 1
-      )
-    })
-
-    output$lines <- renderUI({
-      if (is.null(plot.settings$lines)) {
-        plot.settings$lines = 30
-      }
-      # setting to 30 upon initialization; setting init value in plot.settings
-      # does not work
-
-      sliderInput(
-        "lines",
-        "Number of individual observations (lines) to sample from data",
-        min = 1,
-        max = nrow(df$values_filtered),
-        value = plot.settings$lines,
-        step = 1)
-    })
-
-    observeEvent({
-      df$table_rows_filtered
-      df$values_adj}
-      , ignoreNULL = FALSE, ignoreInit = FALSE, {
-        df$values_filtered <- df$values_adj[df$table_rows_filtered, ]
-
-      })
-
-    proxy <- DT::dataTableProxy("table")
-
-    observeEvent({
-      input$select_lines
-      input$table_rows_all
-      input$table_rows_selected}
-      , ignoreNULL = FALSE, {
-        if (input$select_lines == "Plot all sampled observations") {
-
-          df$selection_mode <- list(mode = "none")
-
-          df$table_rows_filtered <- input$table_rows_all
-          df$table_rows_selected <- NULL
-          # automatically use all filtered observations
-
-        } else if (input$select_lines == "Plot individual observations") {
-
-          shinyjs::disable("lines")
-
-          df$selection_mode <- list(mode = "multiple")
-
-          df$table_rows_filtered <- input$table_rows_all
-          df$table_rows_selected <- input$table_rows_selected
-        }
-      })
-
-    observeEvent(input$table_rows_all, {
-      DT::selectRows(proxy, list())
-    })
-
-    # renders the current reactive data frame
-    output$table = DT::renderDataTable({
-      shiny::req(!is.null(df$selection_mode))
-      DT::datatable(
-        df$values_adj,
-        filter = list(position = "top", clear = TRUE, plain = TRUE),
-        selection = df$selection_mode
-      )},
-      server = TRUE
-      # options = list(
-      #   stateSave = TRUE,
-      #   # columnDefs = list(list(width = '200px', targets = "_all")),
-      #   autoWidth = TRUE,
-      #   scrollX = TRUE
-      # )
     )
-
-    observeEvent(input$iceplot_centerpoint, {
-      selected$iceplot_centerpoint <- as.numeric(input$iceplot_centerpoint)
-    })
-
-    # >> Plot ----
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    #                                                                          #
-    #                             Create the plot                              #
-    #                                                                          #
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
-    observeEvent({
-      df$values_filtered
-      df$table_rows_selected
-      input$select_lines
-      input$iceplot_centerpoint
-      selected$iceplot_mode
-      selected$model
-      plot.settings$var
-      plot.settings$knots
-      plot.settings$lines
-    }
-      , {
-        req(!(TRUE %in% apply(df$values_filtered, MARGIN = 2,
-          function(column) {NA %in% column})))
-        req(nrow(df$values_filtered) > 0)
-        req(nrow(df$values_filtered) >= plot.settings$knots)
-        req(nrow(df$values_filtered) >= plot.settings$lines)
-
-        if (input$select_lines == "Plot all sampled observations") {
-          shiny::withProgress(
-            message = "Calculating predictions..",
-            detail = "Please wait.",
-            min = 0, max = 100, value = 100,
-            {
-              prediction <- makePredictionsSampled(
-                data = df$values_filtered,
-                var = plot.settings$var,
-                model = selected$model,
-                knots = plot.settings$knots,
-                lines = plot.settings$lines,
-                type = type
-              )
-            }
-          )
-          if (selected$iceplot_mode == "Centered") {
-            # req(input$iceplot_centerpoint %in% prediction[, 1, with = FALSE])
-            req(!is.null(selected$iceplot_centerpoint))
-            req(plot.settings$var %in% names(prediction))
-
-            shiny::withProgress(
-              message = "Centering predictions..",
-              detail = "Please wait.",
-              min = 0, max = 100, value = 100,
-              {
-                df$pred <- centerPredictions(
-                  predictions = prediction,
-                  centerpoint = selected$iceplot_centerpoint,
-                  var = plot.settings$var
-                )
-              }
-            )
-          } else if (selected$iceplot_mode == "Regular") {
-            df$pred <- prediction
-          }
-        } else if (input$select_lines == "Plot individual observations") {
-          shinyjs::disable("lines")
-
-          req(!is.null(df$table_rows_selected))
-          req(df$table_rows_selected %in% as.numeric(row.names(df$values_filtered)))
-
-          prediction <- makePredictionsSelected(
-            data = df$values_filtered,
-            var = plot.settings$var,
-            model = selected$model,
-            knots = plot.settings$knots,
-            selected_rows = df$table_rows_selected,
-            type = type
-          )
-          if (selected$iceplot_mode == "Centered") {
-            req(!is.null(selected$iceplot_centerpoint))
-            req(plot.settings$var %in% names(prediction))
-
-            shiny::withProgress(
-              message = "Centering predictions..",
-              detail = "Please wait.",
-              min = 0, max = 100, value = 100,
-              {
-                df$pred <- centerPredictions(
-                  predictions = prediction,
-                  centerpoint = selected$iceplot_centerpoint,
-                  var = plot.settings$var
-                )
-              }
-            )
-          } else if (selected$iceplot_mode == "Regular") {
-            df$pred <- prediction
-          }
-        }
-      })
-
-    output$scatter_unfiltered_basic = renderPlot({
-      scatterPlotUnfiltered()},
-      width = 800,
-      height = 400
-    )
-    output$scatter_unfiltered_plotly = renderPlotly({
-      p <- plotly_build(scatterPlotUnfiltered())
-      p$x$layout$width <- 800
-      p$x$layout$height <- 400
-      p$width <- NULL
-      p$height <- NULL
-      return(p)
-    })
-
-    output$scatter_filtered_basic = renderPlot({
-      scatterPlotFiltered()},
-      width = 800,
-      height = 400
-    )
-    output$scatter_filtered_plotly = renderPlotly({
-      p <- plotly_build(scatterPlotFiltered())
-      p$x$layout$width <- 800
-      p$x$layout$height <- 400
-      p$width <- NULL
-      p$height <- NULL
-      return(p)
-    })
-
-    output$scatter_unfiltered <- renderUI({
-      if (selected$gfx_package == "plotly") {
-        plotlyOutput("scatter_unfiltered_plotly",
-          width = "1200px",
-          height = "400px")
-      } else if (selected$gfx_package == "ggplot2") {
-        plotOutput("scatter_unfiltered_basic")
-      }
-    })
-    output$scatter_filtered <- renderUI({
-      if (selected$gfx_package == "plotly") {
-        plotlyOutput("scatter_filtered_plotly")
-      } else if (selected$gfx_package == "ggplot2") {
-        plotOutput("scatter_filtered_basic")
-      }
-    })
-    # output$scatterFiltered = renderPlotly(scatterPlotFiltered())
-
-    scatterPlotUnfiltered <- eventReactive({
-      df$table_rows_selected
-      plot.settings$var}
-      , {
-        scatterPlot(data = data, target = target,
-          var = plot.settings$var,
-          highlighted = df$table_rows_selected
-        )
-      })
-
-    scatterPlotFiltered <- eventReactive({
-      df$values_filtered
-      df$table_rows_selected
-      plot.settings$var}
-      , {
-        scatterPlot(data = df$values_filtered, target = target,
-          var = plot.settings$var,
-          highlighted = df$table_rows_selected
-        )
-      })
-
-    output$iml_plotly_plot <- renderPlotly({
-      p <- plotly_build(imlPlot())
-      p$x$layout$width <- 800
-      p$x$layout$height <- 400
-      p$width <- NULL
-      p$height <- NULL
-      return(p)
-    })
-
-    output$iml_basic_plot <- renderPlot({
-      imlPlot()},
-      width = 800,
-      height = 400
-    )
-
-    output$plot <- renderUI({
-      if (selected$gfx_package == "plotly") {
-        plotlyOutput("iml_plotly_plot")
-      } else if (selected$gfx_package == "ggplot2") {
-        plotOutput("iml_basic_plot")
-      }
-    })
-
-    # plots the predicted values by calling predefined plot functions with
-    # current reactive values
-    imlPlot = eventReactive(ignoreInit = FALSE, ignoreNULL = FALSE, {
-      df$pred
-      df$values_filtered
-      df$table_rows_selected
-      input$select_lines
-      selected$plot
-      selected$iceplot_centerpoint
-      plot.settings$var
-      plot.settings$knots
-      plot.settings$lines}
-      , {
-        req(plot.settings$lines)
-        req(!is.null(df$pred))
-        req(!(TRUE %in% apply(df$pred, MARGIN = 2,
-          function(column) {NA %in% column})))
-        req(plot.settings$var %in% names(df$pred))
-
-
-        withProgress(
-          message = "Rendering plot..",
-          detail = "Please wait.",
-          min = 0, max = 100, value = 100,
-          {
-            if (nrow(df$values_filtered) == 0) {
-              plot <- placeholderPlot()
-              return(plot)
-            } else if (
-              (input$select_lines == "Plot individual observations") &
-                (is.null(df$table_rows_selected))
-            ) {
-              plot <- placeholderPlot()
-              return(plot)
-            } else {
-              if (type == "regr") {
-                if (selected$plot == "ice") {
-                  plot <- regrIcePlot(
-                    pred = df$pred,
-                    var = plot.settings$var,
-                    target  = target,
-                    knots = plot.settings$knots,
-                    lines = plot.settings$lines,
-                    centered = selected$centered,
-                    centerpoint = selected$iceplot_centerpoint
-                  )
-                  return(plot)
-                } else if (selected$plot == "pdp") {
-                  plot <- regrPartialDependencePlot(
-                    pred = df$pred,
-                    var = plot.settings$var,
-                    target = target,
-                    knots = plot.settings$knots
-                  )
-                  return(plot)
-                } else if (selected$plot == "ale") {
-                  plot <- regrAlePlot(
-                    data = df$values_filtered,
-                    model = selected$model,
-                    var = plot.settings$var,
-                    target = target,
-                    knots = plot.settings$knots
-                  )
-                  return(plot)
-                }
-                # classification
-              } else if (type == "classif") {
-                if (selected$plot == "ice") {
-                  plot <- classifIcePlot(
-                    pred = df$pred,
-                    var = plot.settings$var,
-                    knots = plot.settings$knots,
-                    lines = plot.settings$lines,
-                    centered = selected$centered,
-                    centerpoint = selected$iceplot_centerpoint
-                  )
-                  return(plot)
-                } else if (selected$plot == "pdp") {
-
-                  plot <- classifPartialDependencePlot(
-                    pred = df$pred,
-                    var = plot.settings$var,
-                    target = target,
-                    knots = plot.settings$knots
-                  )
-                  return(plot)
-                } # ending: selected$plot == "pdp
-              } # ending: type = "classif"
-            } # ending: alternatives to placeholder plot
-          } # ending: with Progress function call
-        ) # ending: withProgress(...)
-      }) # ending: observeEvent({...})
-
-    # >> Zoomed Plot ----
-    # render the plot function
-    output$zoomed_plotly_plot = renderPlotly({
-      p <- plotly_build(imlPlot())
-      p$x$layout$width <- 1200
-      p$x$layout$height <- 600
-      p$width <- NULL
-      p$height <- NULL
-      return(p)
-    })
-    output$zoomed_basic_plot = renderPlot({
-      imlPlot()},
-      width = 1200,
-      height = 600
-    )
-
-    output$zoomed_plot <- renderUI({
-      if (selected$gfx_package == "plotly") {
-        plotlyOutput("zoomed_plotly_plot")
-      } else if (selected$gfx_package == "ggplot2") {
-        plotOutput("zoomed_basic_plot")
-      }
-    })
-
-    # >> Learner Summary ----
-    # prints summary of selected model
-    output$learner_summary = renderPrint({
-      capture.output(selected$model)
-    })
-
-    # outputOptions(output, "plot", suspendWhenHidden = FALSE)
-
-    # outs = outputOptions(output)
-    # lapply(names(outs), function(name) {
-    #   outputOptions(output, name, suspendWhenHidden = FALSE)
-    # })
 
   } # end server
 
-  # ~ Start the Shiny App ~ ----
   shinyApp(ui = app.ui, server = app.server)
-
-  #' @author Julia Fried, Tobias Riebe, Christian Scholbeck
 }
