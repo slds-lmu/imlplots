@@ -189,7 +189,7 @@ makePredictionsAleRegr = function(data, target, model, var1, var2 = NULL, knots)
   }
 }
 
-makePredictionsAleClassif = function(data, target, model, var) {
+makePredictionsAleClassif = function(data, target, model, var1, var2) {
 
   var.levels = levels(data[[target]])
 
@@ -202,7 +202,7 @@ makePredictionsAleClassif = function(data, target, model, var) {
       data[ , -which(names(data) == target)],
       model,
       pred.fun = pred.function,
-      J = var)},
+      J = c(var1, var2))},
       error = function(e) return(e),
       warning = function(w) return(w)
     )
@@ -224,11 +224,17 @@ makePredictionsAleClassif = function(data, target, model, var) {
     # no errors or warnings
     var.values = ale.outputs[[1]]$x.values
     pred = lapply(ale.outputs, FUN = function(obj) return(obj$f.values))
-    pred = do.call(cbind.data.frame, pred)
-    pred = do.call(cbind.data.frame, list(var.values, pred))
-    colnames(pred) = c(var, var.levels)
-
-    return(pred)
+    if (is.null(var2)) {
+      pred = do.call(cbind.data.frame, pred)
+      pred = do.call(cbind.data.frame, list(var.values, pred))
+      colnames(pred) = c(var1, var.levels)
+      # return data frame with 2 columns
+      return(pred)
+    } else {
+      # with interaction variable
+      # return list with nr of levels entries ; elements are interact. matrices
+      return(list("x" = var.values, "f" = pred))
+    }
   }
 }
 
@@ -237,7 +243,29 @@ makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots,
   if (task.type == "regr") {
     pred = makePredictionsAleRegr(data, target, model, var1, var2, knots)
   } else if (task.type == "classif") {
-    pred = makePredictionsAleClassif(data, target, model, var = var1)
+    pred = makePredictionsAleClassif(data, target, model, var1, var2)
+  }
+  return(pred)
+}
+
+makePredictionsIce = function(data, var, model, knots, lines, task.type,
+                              selected.rows, data.selection.mode) {
+  if (data.selection.mode == "sampling") {
+    pred = makePredictionsIceSampled(
+      data = data,
+      var = var,
+      model = model,
+      knots = knots,
+      lines = lines,
+      task.type = task.type)
+  } else if (data.selection.mode == "individual") {
+    pred = makePredictionsIceSelected(
+      data = data,
+      var = var,
+      model = model,
+      knots = knots,
+      selected.rows = selected.rows,
+      task.type = task.type)
   }
   return(pred)
 }

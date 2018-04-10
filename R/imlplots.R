@@ -63,9 +63,7 @@
 #' Individual Conditional Expectation"
 #'
 #' Jones (2017). "mmpf: Monte-Carlo Methods for Prediction Functions "The R Journal Vol. XX/YY, AAAA 20ZZ
-
 #' @export
-
 imlplots = function(data, task, models, model.check = "all.features") {
 
   if (!(is.vector(models))) {models = list(models)}
@@ -78,16 +76,21 @@ imlplots = function(data, task, models, model.check = "all.features") {
 
   target = getTaskDesc(task)$target
   task.type = getTaskDesc(task)$type
+  if (task.type == "regr") {
+    target.levels = levels(data[[target]])
+  } else {
+    target.levels = NULL
+  }
 
   features = names(data)[!names(data) %in% target]
   features.numeric = features[sapply(data[!names(data) %in% target], is.numeric)]
   features.factor = features[sapply(data[!names(data) %in% target], is.factor)]
-
+  
   do.call(
     modelCheck,
     list(data = data, models = models, features = features, model.check))
   # basic check whether provided models throw error when using
-  # marginalPrediction(...)
+  # marginalPrediction()
 
   app.ui = dashboardPage(
     shinyjs::useShinyjs(),
@@ -122,7 +125,8 @@ imlplots = function(data, task, models, model.check = "all.features") {
                     "Select observations to sample from",
                     choices = c(
                       "Plot all sampled observations",
-                      "Plot individual observations"
+                      paste("Plot individual observations",
+                      "(only influences computations of ICE and PDP curves)")
                     )
                   ),
                   div(style = "overflow-x: scroll",
@@ -621,9 +625,6 @@ imlplots = function(data, task, models, model.check = "all.features") {
                      knots = selected$knots)
                    return(plot)
                  } else if (selected$plot.type == "ale") {
-                   # if (!is.null(selected$ale.interaction)) {
-                   #   shiny::req(selected$ale.interaction %in% colnames(df$pred))
-                   # }
                    plot = regrAlePlot(
                      data = df$pred,
                      target = target,
@@ -654,7 +655,9 @@ imlplots = function(data, task, models, model.check = "all.features") {
                    plot = classifAlePlot(
                      data = df$pred,
                      target = target,
-                     var = selected$var)
+                     target.levels = target.levels,
+                     var1 = selected$var,
+                     var2 = selected$ale.interaction)
                    return(plot)
                  }
                }
@@ -665,7 +668,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
 
     # --------------------------------------------------------------------------
     # Observers
-
+     
      observeEvent({
        # observer for calculating predictions
        df$values.filtered
@@ -682,7 +685,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
        {
          shiny::req(nrow(df$values.filtered) > 0)
          shiny::req(!(TRUE %in% apply(df$values.filtered, MARGIN = 2,
-                               function(column) {NA %in% column})))
+                                      function(column) {NA %in% column})))
          if (selected$plot.type == "ale") {
            # use ALEPlot::ALEPlot(..) to predict for ale
            shiny::withProgress(
@@ -701,88 +704,58 @@ imlplots = function(data, task, models, model.check = "all.features") {
              }
            )
          } else {
-           # use mmpf::marginalPrediction(..) to predict for ice/pdp
+           # (selected$plot.type == "ice" || selected$plot.type == "pdp")
            shiny::req(nrow(df$values.filtered) >= selected$knots)
            shiny::req(nrow(df$values.filtered) >= selected$lines)
-
-           if (selected$data.selection.mode == "sampling") {
-             # Sample selected$lines from df$values.filtered
-             shiny::withProgress(
-               message = "Calculating predictions..",
-               detail = "Please wait.",
-               min = 0, max = 100, value = 100,
-               {
-                 prediction = makePredictionsIceSampled(
-                   data = df$values.filtered,
-                   var = selected$var,
-                   model = selected$model,
-                   knots = selected$knots,
-                   lines = selected$lines,
-                   task.type = task.type)
-               }
-             )
-             if (selected$centered == TRUE) {
-               # shiny::req(
-               #   selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
-               shiny::req(!is.null(selected$iceplot.center.x))
-               shiny::req(!is.na(selected$iceplot.center.x))
-               shiny::req(selected$var %in% names(prediction))
-
-               shiny::withProgress(
-                 message = "Centering predictions..",
-                 detail = "Please wait.",
-                 min = 0, max = 100, value = 100,
-                 {
-                   df$pred = centerPredictions(
-                     predictions = prediction,
-                     center.x = selected$iceplot.center.x,
-                     var = selected$var)
-                 }
-               )
-             } else if (selected$centered == FALSE) {
-               df$pred = prediction
-             }
-           } else if (selected$data.selection.mode == "individual") {
+           if (selected$data.selection.mode == "individual") {
              # mmpf::marginalPrediction(...) marginalizes only over selected
              # observations
              shiny::req(!is.null(selected$table.rows))
              shiny::req(selected$table.rows %in% as.numeric(
                row.names(df$values.filtered)))
-
-             prediction = makePredictionsIceSelected(
-               data = df$values.filtered,
-               var = selected$var,
-               model = selected$model,
-               knots = selected$knots,
-               selected.rows = selected$table.rows,
-               task.type = task.type)
-
-             if (selected$centered == TRUE) {
-               # shiny::req(
-               #   selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
-               shiny::req(!is.null(selected$iceplot.center.x))
-               shiny::req(!is.na(selected$iceplot.center.x))
-               shiny::req(selected$var %in% names(prediction))
-
-               shiny::withProgress(
-                 message = "Centering predictions..",
-                 detail = "Please wait.",
-                 min = 0, max = 100, value = 100,
-                 {
-                   df$pred = centerPredictions(
-                     predictions = prediction,
-                     center.x = selected$iceplot.center.x,
-                     var = selected$var)
-                 }
-               )
-             } else if (selected$centered == FALSE) {
-               df$pred = prediction
+           } else {}
+           
+           shiny::withProgress(
+             message = "Calculating predictions..",
+             detail = "Please wait.",
+             min = 0, max = 100, value = 100,
+             {
+               prediction = makePredictionsIce(
+                 data = df$values.filtered,
+                 var = selected$var,
+                 model = selected$model,
+                 knots = selected$knots,
+                 lines = selected$lines,
+                 task.type = task.type,
+                 selected.rows = selected$table.rows,
+                 data.selection.mode = selected$data.selection.mode)
              }
+           )
+           if (selected$centered == TRUE) {
+             # shiny::req(
+             #   selected$iceplot.center.x %in% prediction[, 1, with = FALSE])
+             shiny::req(!is.null(selected$iceplot.center.x))
+             shiny::req(!is.na(selected$iceplot.center.x))
+             shiny::req(selected$var %in% names(prediction))
+             
+             shiny::withProgress(
+               message = "Centering predictions..",
+               detail = "Please wait.",
+               min = 0, max = 100, value = 100,
+               {
+                 df$pred = centerPredictions(
+                   predictions = prediction,
+                   center.x = selected$iceplot.center.x,
+                   var = selected$var)
+               }
+             )
+           } else if (selected$centered == FALSE) {
+             df$pred = prediction
            }
          }
        }
      )
-
+     
      observeEvent({
        # reload button action on top right corner
        input$reload},
@@ -790,7 +763,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
          session$reload()
        }
      )
-
+     
      observeEvent({
        # line sampling not necessary when individual observations are selected
        # or in ale plot mode
@@ -941,7 +914,9 @@ imlplots = function(data, task, models, model.check = "all.features") {
         if (input$data_selection_mode == "Plot all sampled observations") {
           selected$data.selection.mode = "sampling"
         } else if (input$data_selection_mode ==
-                   "Plot individual observations") {
+                   paste("Plot individual observations",
+                         "(only influences computations of ICE and PDP curves)")
+        ) {
           selected$data.selection.mode = "individual"
         }
 
@@ -1024,8 +999,9 @@ imlplots = function(data, task, models, model.check = "all.features") {
             (TRUE %in% lapply(featureSliders(), is.na))) {
           selected$values.numeric = NULL
         } else {
-          selected$values.numeric = unlist(featureSliders(),
-                                           function(x) return(as.numeric(x)))
+          selected$values.numeric = unlist(
+            featureSliders(),
+            function(x) return(as.numeric(x)))
         }
 
         # now do the same with selectors
@@ -1033,8 +1009,9 @@ imlplots = function(data, task, models, model.check = "all.features") {
             (TRUE %in% lapply(featureSelectors(), is.na))) {
           selected$values.factor = NULL
         } else {
-          selected$values.factor = unlist(featureSelectors(),
-                                          function(x) return(as.numeric(x)))
+          selected$values.factor = unlist(
+            featureSelectors(),
+            function(x) return(as.numeric(x)))
         }
       }
     )
@@ -1069,8 +1046,9 @@ imlplots = function(data, task, models, model.check = "all.features") {
             factor.feature = selected$features.factor[j]
             factor.value = selected$values.factor[j]
             factor.levels = levels(data[[factor.feature]])
-            df$values.adj[factor.feature] = factor(x = factor.value,
-                                                   levels = factor.levels)
+            df$values.adj[factor.feature] = factor(
+              x = factor.value,
+              levels = factor.levels)
           }
         }
         unselected.features =
@@ -1091,10 +1069,16 @@ imlplots = function(data, task, models, model.check = "all.features") {
               min = min(data[[input.name]])
               max = max(data[[input.name]])
               mean = mean(data[[input.name]])
-              sliderInput(input.name, input.name, min = min, max = max,
-                value = mean, step = NULL)})
-
+              sliderInput(
+                input.name,input.name,
+                min = floor(min),
+                max = ceiling(max),
+                value = mean,
+                step = NULL,
+                round = -5)
+            })
             do.call(tagList, sliders)
+            # create HTML tags for all sliders
           }
         })
       }
@@ -1113,6 +1097,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
               selectInput(input.name, input.name, choices = factor.levels)})
 
             do.call(tagList, selectors)
+            # create HTML tags for all selectors
           }
         })
       }
