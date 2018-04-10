@@ -1,4 +1,4 @@
-makePredictionsIceSampled = function(data, var, knots, lines, model, type) {
+makePredictionsIceSampled = function(data, var, knots, lines, model, task.type) {
   # create Monte Carlo estimates for ICE and PDP curve with random sampling
   #
   # Args:
@@ -8,12 +8,12 @@ makePredictionsIceSampled = function(data, var, knots, lines, model, type) {
   #   knots (numeric): sampled unique values of var
   #   lines (numeric): sampled observations to create ICE curves for
   #   model (obj): mlr trained model
-  #   type (string): "regr" or "classif" for regression and classification tasks
+  #   task.type (string): "regr" or "classif" for regression and classification tasks
   # Returns:
   #   a data frame with one column containing all sampled unique values of var;
   #   as many columns as lines with predictions produced by model (ICE curves)
   #   one additonal column that averages the ICE curves to a PDP estimate
-  if (type == "regr") {
+  if (task.type == "regr") {
 
     prediction = marginalPrediction(
       data = data,
@@ -25,7 +25,7 @@ makePredictionsIceSampled = function(data, var, knots, lines, model, type) {
       }
     )
 
-  } else if (type == "classif") {
+  } else if (task.type == "classif") {
 
     prediction = marginalPrediction(
       data = data,
@@ -40,7 +40,7 @@ makePredictionsIceSampled = function(data, var, knots, lines, model, type) {
       }
     )
   }
-  var.vector = prediction[, 1, which = FALSE, drop = FALSE]
+  var.vector = prediction[, 1, which = FALSE]
   if (is.numeric(var.vector)) {
     prediction[ , 1] = round(var.vector, digits = 5)
   } else {}
@@ -53,7 +53,7 @@ makePredictionsIceSampled = function(data, var, knots, lines, model, type) {
 }
 
 makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
-                                       type) {
+                                       task.type) {
   # create Monte Carlo estimates for ICE and PDP curves, marginalize only over
   # specific observations/rows
   #
@@ -64,13 +64,13 @@ makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
   #   model (obj): mlr trained model
   #   knots (numeric): sampled unique values of var
   #   selected.rows (numeric): row IDs of data to marginalize over
-  #   type (string): "regr" or "classif" for regression and classification tasks
+  #   task.type (string): "regr" or "classif" for regression and classification tasks
   # Returns:
   #   a data frame with one column containing all sampled unique values of var;
   #   as many columns as selected.rows with predictions produced by model
   #   (ICE curves);
   #   one additonal column that averages the ICE curves to a PDP estimate
-  if (type == "regr") {
+  if (task.type == "regr") {
 
     prediction = marginalPrediction(
       data = data,
@@ -83,7 +83,7 @@ makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
       aggregate.fun = function(x) {
         c(identity(x), "ave" = mean(x))
       })
-  } else if (type == "classif") {
+  } else if (task.type == "classif") {
 
     prediction = marginalPrediction(
       data = data,
@@ -101,7 +101,7 @@ makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
       }
     )
   }
-  var.vector = prediction[, 1, which = FALSE, drop = FALSE]
+  var.vector = prediction[, 1, which = FALSE]
   if (is.numeric(var.vector)) {
     prediction[ , 1] = round(var.vector, digits = 5)
   } else {}
@@ -140,7 +140,7 @@ centerPredictions = function(predictions, center.x, var) {
   return(pred.centered)
 }
 
-makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots) {
+makePredictionsAleRegr = function(data, target, model, var1, var2 = NULL, knots) {
   # create predictions for ALE plots
   #
   # Args:
@@ -155,23 +155,22 @@ makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots) {
   #   a data frame with one column containing all sampled unique values of var1;
   #   if var2 is not NULL, one column with sampled unique values of var2
   #   one column with the according ALE effects
-
   pred.function = function(X.model, newdata) {
     as.numeric(predict(X.model, newdata))
   }
-  obj = tryCatch(
-    {ALEPlot::ALEPlot(
-    data[ , -which(names(data) == target)],
-    model,
-    pred.fun = pred.function,
-    J = c(var1, var2),
-    K = knots)},
+  obj = tryCatch({
+    ALEPlot::ALEPlot(
+      data[ , -which(names(data) == target)],
+      model,
+      pred.fun = pred.function,
+      J = c(var1, var2),
+      K = knots)},
     error = function(e) return(e),
     warning = function(w) return(w)
   )
   # ALEPlot function not (yet) completely reliable
   if (any(class(obj) == "warning") | any(class(obj) == "error")) {
-    return(obj)
+    invisible(return("error"))
   } else {
     # no error or warning
     if (is.null(var2)) {
@@ -188,4 +187,57 @@ makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots) {
     }
     return(df)
   }
+}
+
+makePredictionsAleClassif = function(data, target, model, var) {
+
+  var.levels = levels(data[[target]])
+
+  ale.outputs = lapply(1:length(var.levels), FUN = function(i) {
+    pred.function = function(X.model, newdata) {
+      predict(X.model, newdata, type = "prob")[, i]}
+    # get ALEPlot outputs for each class
+    obj = tryCatch({
+      ALEPlot::ALEPlot(
+      data[ , -which(names(data) == target)],
+      model,
+      pred.fun = pred.function,
+      J = var)},
+      error = function(e) return(e),
+      warning = function(w) return(w)
+    )
+    return(obj)
+  })
+  # ALEPlot function not (yet) completely reliable
+  error.check = vapply(ale.outputs, FUN = function(obj) {
+    bool = (any(class(obj) == "warning") | any(class(obj) == "error"))
+    # if any error or warning is found in a class prediction, print to console
+    if (bool == TRUE) {
+      warning("ALEPlot error msg:", call. = FALSE)
+      print(obj)}
+    return(bool)
+    },
+    FUN.VALUE = logical(1))
+  if (TRUE %in% error.check) {
+    return("error")
+  } else {
+    # no errors or warnings
+    var.values = ale.outputs[[1]]$x.values
+    pred = lapply(ale.outputs, FUN = function(obj) return(obj$f.values))
+    pred = do.call(cbind.data.frame, pred)
+    pred = do.call(cbind.data.frame, list(var.values, pred))
+    colnames(pred) = c(var, var.levels)
+
+    return(pred)
+  }
+}
+
+makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots,
+                              task.type) {
+  if (task.type == "regr") {
+    pred = makePredictionsAleRegr(data, target, model, var1, var2, knots)
+  } else if (task.type == "classif") {
+    pred = makePredictionsAleClassif(data, target, model, var = var1)
+  }
+  return(pred)
 }

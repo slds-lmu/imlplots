@@ -12,11 +12,16 @@
 #' @param task The mlr task the models were being trained on,
 #' e.g. iris.task = makeClassifTask(data = iris, target = "Species").
 #' Classification and regression tasks are supported.
-#' @param models A list of mlr trained models, e.g. list(rf.mod, glm.mod).
-#'
+#' @param models A list of mlr trained models, e.g. list(rf.mod, glm.mod). \cr
 #' You can provide differently tuned models of the same learner by assigning
 #' a unique ID to the learner, e.g.
-#' \code{makeLearner("regr.randomForest", id = "ownId")} \cr
+#' \code{makeLearner("regr.randomForest", id = "ownId")}
+#'
+#' @param model.check A string. A model check is performed upon initialization,
+#' whether the provided models can be used to properly predict. \cr
+#' 'all.features' iteratively checks all model/feature combinations. 'sample.feature' randomly
+#' selects a single feature from the feature space and checks all models with
+#' it.
 #'
 #' @examples
 #' library(mlr)
@@ -61,7 +66,7 @@
 #' Jones (2017). "mmpf: Monte-Carlo Methods for Prediction Functions "The R Journal Vol. XX/YY, AAAA 20ZZ
 #' @export
 
-imlplots = function(data, task, models) {
+imlplots = function(data, task, models, model.check = "all.features") {
 
   if (!(is.vector(models))) {models = list(models)}
   assertDataFrame(data)
@@ -72,7 +77,7 @@ imlplots = function(data, task, models) {
   learner.models.names = lapply(models, function(x) x[["learner"]][["id"]])
 
   target = getTaskDesc(task)$target
-  type = getTaskDesc(task)$type
+  task.type = getTaskDesc(task)$type
 
   features = names(data)[!names(data) %in% target]
   features.numeric = features[sapply(data[!names(data) %in% target], is.numeric)]
@@ -80,7 +85,7 @@ imlplots = function(data, task, models) {
 
   do.call(
     modelCheck,
-    list(data = data, models = models, var = sample(features, 1)))
+    list(data = data, models = models, features = features, model.check))
   # basic check whether provided models throw error when using
   # marginalPrediction(...)
 
@@ -572,11 +577,15 @@ imlplots = function(data, task, models) {
        ignoreInit = FALSE,
        ignoreNULL = FALSE,
        {
-         shiny::req(selected$lines)
          shiny::req(!is.null(df$pred))
-         shiny::req(!(TRUE %in% apply(df$pred, MARGIN = 2,
+         shiny::req((selected$var %in% names(df$pred)) ||
+                      "error" %in% df$pred)
+         shiny::req(selected$lines)
+         if (!"error" %in% df$pred) {
+           shiny::req(
+             !(TRUE %in% apply(df$pred, MARGIN = 2,
                                function(column) {NA %in% column})))
-         shiny::req(selected$var %in% names(df$pred))
+         }
 
          withProgress(
            message = "Rendering plot..",
@@ -593,7 +602,7 @@ imlplots = function(data, task, models) {
                plot = placeholderPlot()
                return(plot)
              } else {
-               if (type == "regr") {
+               if (task.type == "regr") {
                  if (selected$plot.type == "ice") {
                    plot = regrIcePlot(
                      pred = df$pred,
@@ -602,30 +611,29 @@ imlplots = function(data, task, models) {
                      knots = selected$knots,
                      lines = selected$lines,
                      centered = selected$centered,
-                     center.x = selected$iceplot.center.x
-                   )
+                     center.x = selected$iceplot.center.x)
                    return(plot)
                  } else if (selected$plot.type == "pdp") {
                    plot = regrPartialDependencePlot(
                      pred = df$pred,
                      var = selected$var,
                      target = target,
-                     knots = selected$knots
-                   )
+                     knots = selected$knots)
                    return(plot)
                  } else if (selected$plot.type == "ale") {
-
+                   # if (!is.null(selected$ale.interaction)) {
+                   #   shiny::req(selected$ale.interaction %in% colnames(df$pred))
+                   # }
                    plot = regrAlePlot(
                      data = df$pred,
                      target = target,
                      var1 = selected$var,
                      var2 = selected$ale.interaction,
                      knots = selected$knots,
-                     gfx.package = selected$gfx.package
-                   )
+                     gfx.package = selected$gfx.package)
                    return(plot)
                  }
-               } else if (type == "classif") {
+               } else if (task.type == "classif") {
                  if (selected$plot.type == "ice") {
                    plot = classifIcePlot(
                      pred = df$pred,
@@ -633,28 +641,20 @@ imlplots = function(data, task, models) {
                      knots = selected$knots,
                      lines = selected$lines,
                      centered = selected$centered,
-                     center.x = selected$iceplot.center.x
-                   )
+                     center.x = selected$iceplot.center.x)
                    return(plot)
                  } else if (selected$plot.type == "pdp") {
-
                    plot = classifPartialDependencePlot(
                      pred = df$pred,
                      var = selected$var,
                      target = target,
-                     knots = selected$knots
-                   )
+                     knots = selected$knots)
                    return(plot)
                  } else if (selected$plot.type == "ale") {
-
                    plot = classifAlePlot(
                      data = df$pred,
                      target = target,
-                     var1 = selected$var,
-                     var2 = selected$ale.interaction,
-                     knots = selected$knots,
-                     gfx.package = selected$gfx.package
-                   )
+                     var = selected$var)
                    return(plot)
                  }
                }
@@ -696,8 +696,8 @@ imlplots = function(data, task, models) {
                  model = selected$model,
                  var1 = selected$var,
                  var2 = selected$ale.interaction,
-                 knots = selected$knots
-               )
+                 knots = selected$knots,
+                 task.type = task.type)
              }
            )
          } else {
@@ -718,7 +718,7 @@ imlplots = function(data, task, models) {
                    model = selected$model,
                    knots = selected$knots,
                    lines = selected$lines,
-                   type = type)
+                   task.type = task.type)
                }
              )
              if (selected$centered == TRUE) {
@@ -755,7 +755,7 @@ imlplots = function(data, task, models) {
                model = selected$model,
                knots = selected$knots,
                selected.rows = selected$table.rows,
-               type = type)
+               task.type = task.type)
 
              if (selected$centered == TRUE) {
                # shiny::req(
@@ -831,6 +831,20 @@ imlplots = function(data, task, models) {
         }
       }
     )
+
+    observeEvent({
+      selected$plot.type},
+      {
+        if (task.type == "classif" && selected$plot.type == "ale") {
+          updateSelectInput(
+            session = session,
+            inputId = "aleplot_mode",
+            label = "For classification ALE plots only main effects are
+                    supported",
+            choices = "Main Effects")
+        }
+        selected$ale.interaction = NULL
+    })
 
     observeEvent({
       # select model for marginal prediction function based on selected string

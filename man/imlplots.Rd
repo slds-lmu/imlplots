@@ -4,7 +4,7 @@
 \alias{imlplots}
 \title{Interactive Plots for Interpretable Machine Learning}
 \usage{
-imlplots(data, task, models)
+imlplots(data, task, models, model.check = "all.features")
 }
 \arguments{
 \item{data}{A data frame of the test data.
@@ -14,11 +14,16 @@ Has to contain exactly the same variables as the training data.}
 e.g. iris.task = makeClassifTask(data = iris, target = "Species").
 Classification and regression tasks are supported.}
 
-\item{models}{A list of mlr trained models, e.g. list(rf.mod, glm.mod).
-
+\item{models}{A list of mlr trained models, e.g. list(rf.mod, glm.mod). \cr
 You can provide differently tuned models of the same learner by assigning
 a unique ID to the learner, e.g.
-\code{makeLearner("regr.randomForest", id = "ownId")} \cr}
+\code{makeLearner("regr.randomForest", id = "ownId")}}
+
+\item{model.check}{A string. A model check is performed upon initialization,
+whether the provided models can be used to properly predict. \cr
+'all.features' iteratively checks all model/feature combinations. 'sample.feature' randomly
+selects a single feature from the feature space and checks all models with
+it.}
 }
 \description{
 The function \code{imlplots()} creates an interactive shiny based dashboard
