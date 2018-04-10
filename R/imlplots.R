@@ -10,9 +10,9 @@
 #' @param data A data frame of the test data.
 #' Has to contain exactly the same variables as the training data.
 #' @param task The mlr task the models were being trained on,
-#' e.g. iris.task = makeClassifTask(data = iris, target = "Species").
+#' e.g. \code{iris.task = makeClassifTask(data = iris, target = "Species")}.
 #' Classification and regression tasks are supported.
-#' @param models A list of mlr trained models, e.g. list(rf.mod, glm.mod). \cr
+#' @param models A list of mlr trained models, e.g. \code{list(rf.mod, glm.mod)}. \cr
 #' You can provide differently tuned models of the same learner by assigning
 #' a unique ID to the learner, e.g.
 #' \code{makeLearner("regr.randomForest", id = "ownId")}
@@ -24,20 +24,19 @@
 #' it.
 #'
 #' @examples
-#' library(mlr)
 #' tsk = makeRegrTask(data = boston, target = "medv")
 #' mod.rf = train("regr.randomForest", task = tsk)
-#' mod.svm = train("regr.svm", task = tsk)
-#' imlplots(boston, tsk, list(mod.rf, mod.svm))
+#' mod.glm = train("regr.glm", task = tsk)
+#' imlplots(boston, tsk, list(mod.rf, mod.glm))
 #'
 #' @note
 
-#' The plots display combinations of different inputs and outputs/predictions.
+#' The plots display combinations of different inputs and outputs/ predictions.
 #' Therefore they are highly sensitive to the trained and provided models.
 #'
 #' The variable of interest provides variations of different inputs, while all other
 #' variables are held constant. You can look at how the predictions change,
-#' if you had provided different test data, by either filtering/subsetting
+#' if you had provided different test data, by either filtering/ subsetting
 #' the data or manually setting a variable to a fixed value for all observations.
 #'
 #' The function performs a basic check upon initialization,
@@ -57,8 +56,8 @@
 #' Bischl et. al (2016). "mlr: Machine Learning in R." Journal of Machine Learning
 #' Research, 17(170), pp.
 #'
-#' Friedman, J.H. (2001). “Greedy Function Approximation: A Gradient Boosting
-#' Machine.” Annals of Statistics 29: 1189–1232.
+#' Friedman, J.H. (2001). "Greedy Function Approximation: A Gradient Boosting
+#' Machine." Annals of Statistics 29: 1189 - 1232.
 #'
 #' Goldstein et al. (2013). "Peeking Inside the Black Box: Visualizing Statistical Learning with Plots of
 #' Individual Conditional Expectation"
