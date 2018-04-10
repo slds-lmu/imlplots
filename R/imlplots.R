@@ -77,7 +77,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
   learner.models.names = lapply(models, function(x) x[["learner"]][["id"]])
 
   target = getTaskDesc(task)$target
-  type = getTaskDesc(task)$type
+  task.type = getTaskDesc(task)$type
 
   features = names(data)[!names(data) %in% target]
   features.numeric = features[sapply(data[!names(data) %in% target], is.numeric)]
@@ -602,7 +602,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
                plot = placeholderPlot()
                return(plot)
              } else {
-               if (type == "regr") {
+               if (task.type == "regr") {
                  if (selected$plot.type == "ice") {
                    plot = regrIcePlot(
                      pred = df$pred,
@@ -633,7 +633,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
                      gfx.package = selected$gfx.package)
                    return(plot)
                  }
-               } else if (type == "classif") {
+               } else if (task.type == "classif") {
                  if (selected$plot.type == "ice") {
                    plot = classifIcePlot(
                      pred = df$pred,
@@ -697,7 +697,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
                  var1 = selected$var,
                  var2 = selected$ale.interaction,
                  knots = selected$knots,
-                 type = type)
+                 task.type = task.type)
              }
            )
          } else {
@@ -718,7 +718,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
                    model = selected$model,
                    knots = selected$knots,
                    lines = selected$lines,
-                   type = type)
+                   task.type = task.type)
                }
              )
              if (selected$centered == TRUE) {
@@ -755,7 +755,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
                model = selected$model,
                knots = selected$knots,
                selected.rows = selected$table.rows,
-               type = type)
+               task.type = task.type)
 
              if (selected$centered == TRUE) {
                # shiny::req(
@@ -832,18 +832,19 @@ imlplots = function(data, task, models, model.check = "all.features") {
       }
     )
 
-    # observeEvent({
-    #   selected$plot.type},
-    #   {
-    #     if (type == "classif" && selected$plot.type == "ale") {
-    #       updateSelectInput(
-    #         session = session,
-    #         inputId = "aleplot_mode",
-    #         label = "For classification ALE plots only main effects are
-    #                 supported",
-    #         choices = "Main Effects")
-    #     }
-    # })
+    observeEvent({
+      selected$plot.type},
+      {
+        if (task.type == "classif" && selected$plot.type == "ale") {
+          updateSelectInput(
+            session = session,
+            inputId = "aleplot_mode",
+            label = "For classification ALE plots only main effects are
+                    supported",
+            choices = "Main Effects")
+        }
+        selected$ale.interaction = NULL
+    })
 
     observeEvent({
       # select model for marginal prediction function based on selected string

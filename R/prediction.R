@@ -1,4 +1,4 @@
-makePredictionsIceSampled = function(data, var, knots, lines, model, type) {
+makePredictionsIceSampled = function(data, var, knots, lines, model, task.type) {
   # create Monte Carlo estimates for ICE and PDP curve with random sampling
   #
   # Args:
@@ -8,12 +8,12 @@ makePredictionsIceSampled = function(data, var, knots, lines, model, type) {
   #   knots (numeric): sampled unique values of var
   #   lines (numeric): sampled observations to create ICE curves for
   #   model (obj): mlr trained model
-  #   type (string): "regr" or "classif" for regression and classification tasks
+  #   task.type (string): "regr" or "classif" for regression and classification tasks
   # Returns:
   #   a data frame with one column containing all sampled unique values of var;
   #   as many columns as lines with predictions produced by model (ICE curves)
   #   one additonal column that averages the ICE curves to a PDP estimate
-  if (type == "regr") {
+  if (task.type == "regr") {
 
     prediction = marginalPrediction(
       data = data,
@@ -25,7 +25,7 @@ makePredictionsIceSampled = function(data, var, knots, lines, model, type) {
       }
     )
 
-  } else if (type == "classif") {
+  } else if (task.type == "classif") {
 
     prediction = marginalPrediction(
       data = data,
@@ -53,7 +53,7 @@ makePredictionsIceSampled = function(data, var, knots, lines, model, type) {
 }
 
 makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
-                                       type) {
+                                       task.type) {
   # create Monte Carlo estimates for ICE and PDP curves, marginalize only over
   # specific observations/rows
   #
@@ -64,13 +64,13 @@ makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
   #   model (obj): mlr trained model
   #   knots (numeric): sampled unique values of var
   #   selected.rows (numeric): row IDs of data to marginalize over
-  #   type (string): "regr" or "classif" for regression and classification tasks
+  #   task.type (string): "regr" or "classif" for regression and classification tasks
   # Returns:
   #   a data frame with one column containing all sampled unique values of var;
   #   as many columns as selected.rows with predictions produced by model
   #   (ICE curves);
   #   one additonal column that averages the ICE curves to a PDP estimate
-  if (type == "regr") {
+  if (task.type == "regr") {
 
     prediction = marginalPrediction(
       data = data,
@@ -83,7 +83,7 @@ makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
       aggregate.fun = function(x) {
         c(identity(x), "ave" = mean(x))
       })
-  } else if (type == "classif") {
+  } else if (task.type == "classif") {
 
     prediction = marginalPrediction(
       data = data,
@@ -233,10 +233,10 @@ makePredictionsAleClassif = function(data, target, model, var) {
 }
 
 makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots,
-                              type) {
-  if (type == "regr") {
+                              task.type) {
+  if (task.type == "regr") {
     pred = makePredictionsAleRegr(data, target, model, var1, var2, knots)
-  } else if (type == "classif") {
+  } else if (task.type == "classif") {
     pred = makePredictionsAleClassif(data, target, model, var = var1)
   }
   return(pred)

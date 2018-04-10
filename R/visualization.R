@@ -179,11 +179,10 @@ regrAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
     # no error or warning
     if (is.null(var2)) {
       # line plot
+      print(data)
       plot = ggplot(
         data = data,
-        aes_string(
-          x = var1,
-          y = "ale.effect")) +
+        aes_string(x = var1, y = "ale.effect", group = factor(var1))) +
         geom_line(size = 1, color = "steelblue") +
         labs(y = paste("ALE main effect on", target), x = var1) +
         theme_pubr()
