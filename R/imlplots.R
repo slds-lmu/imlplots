@@ -369,14 +369,20 @@ imlplots = function(data, task, models, model.check = "all.features") {
       }
       # setting to 30 upon initialization; setting init value in selected
       # does not work
-
-      sliderInput(
-        "lines",
-        "Number of individual observations (lines) to sample from data",
-        min = 1,
-        max = nrow(df$values.filtered),
-        value = selected$lines,
-        step = 1)
+      if (selected$data.selection.mode == "individual" ||
+          selected$plot.type == "ale") {
+        selected$lines = 10
+        # makes lines have full width
+        return(invisible(NULL))
+      } else {
+        sliderInput(
+          "lines",
+          "Number of individual observations (lines) to sample from data",
+          min = 1,
+          max = nrow(df$values.filtered),
+          value = selected$lines,
+          step = 1)
+      }
     })
 
      output$learner_summary = renderPrint({
@@ -763,23 +769,22 @@ imlplots = function(data, task, models, model.check = "all.features") {
          session$reload()
        }
      )
-
-     observeEvent({
-       # line sampling not necessary when individual observations are selected
-       # or in ale plot mode
-       selected$data.selection.mode
-       selected$plot.type},
-       {
-         req(!is.null(selected$data.selection.mode))
-         req(!is.null(selected$plot.type))
-         if (selected$data.selection.mode == "individual" ||
-             selected$plot.type == "ale") {
-           shinyjs::disable("lines")
-         } else {
-           shinyjs::enable("lines")
-         }
-       }
-     )
+#
+#      observeEvent({
+#        # line sampling not necessary when individual observations are selected
+#        # or in ale plot mode
+#        selected$data.selection.mode
+#        selected$plot.type},
+#        {
+#          req(!is.null(selected$data.selection.mode))
+#          req(!is.null(selected$plot.type))
+#          if (selected$data.selection.mode == "individual") {
+#            shinyjs::disable("lines")
+#          } else {
+#            shinyjs::enable("lines")
+#          }
+#        }
+#      )
 
      observeEvent({
        input$iceplot_mode
@@ -893,10 +898,29 @@ imlplots = function(data, task, models, model.check = "all.features") {
     )
 
     observeEvent({
+      # output$knots is a dynamic server side rendered UI and could be caught
+      # in endless loop when setting init value to old reactive value;
+      # hence the input is disabled upon init so that UI can finish rendering
+      input$knots},
+      {
+        shinyjs::disable("knots")
+        selected$knots = input$knots
+      }
+    )
+
+    observeEvent({
+      # output$lines is a dynamic server side rendered UI and could be caught
+      # in endless loop when setting init value to old reactive value;
+      # hence the input is disabled upon init so that UI can finish rendering
+      input$lines},
+      {
+        shinyjs::disable("lines")
+        selected$lines = input$lines
+      }
+    )
+    observeEvent({
       # set reactive values to UI values
       input$var
-      input$knots
-      input$lines
       input$plot_type
       input$aleplot_mode
       input$data_selection_mode
@@ -905,8 +929,6 @@ imlplots = function(data, task, models, model.check = "all.features") {
       ignoreNULL = FALSE,
       {
         selected$var = input$var
-        selected$knots = input$knots
-        selected$lines = input$lines
         selected$aleplot.mode = input$aleplot_mode
         selected$features = input$checks
         selected$iceplot.center.x = input$iceplot_center_x
