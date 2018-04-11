@@ -42,7 +42,7 @@ makePredictionsIceSampled = function(data, var, knots, lines, model,
       }
     )
   }
-  var.vector = prediction[, 1]
+  var.vector = prediction[, 1, with = FALSE]
   if (is.numeric(var.vector)) {
     prediction[ , 1] = round(var.vector, digits = 5)
   } else {}
@@ -104,7 +104,7 @@ makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
       }
     )
   }
-  var.vector = prediction[, 1]
+  var.vector = prediction[, 1, with = FALSE]
   if (is.numeric(var.vector)) {
     prediction[ , 1] = round(var.vector, digits = 5)
   } else {}

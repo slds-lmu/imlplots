@@ -290,7 +290,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
     # ui outputs
 
     output$iceplot_center = renderUI({
-      knot.values = df$pred[, 1]
+      knot.values = df$pred[, 1, with = FALSE]
       # sampled values appearing on the horizontal axis in ICE and PDP
       selectInput(
         "iceplot_center_x",
