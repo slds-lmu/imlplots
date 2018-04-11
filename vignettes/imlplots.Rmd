@@ -269,7 +269,4 @@ imlplots(data = titanic, task = titanic.task, titanic.rf)
 
 # References
 
-* [PDP and ICE plots](https://arxiv.org/pdf/1309.6392.pdf)
-* [mmpf R package](https://github.com/zmjones/mmpf)
-* [ALE plots](https://arxiv.org/abs/1612.08468)
-* [ALE R package](https://cran.r-project.org/web/packages/ALEPlot/index.html)
+* [References](https://github.com/juliafried/imlplots/raw/master/paper/references.pdf)
