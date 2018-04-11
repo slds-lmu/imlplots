@@ -1068,14 +1068,16 @@ imlplots = function(data, task, models, model.check = "all.features") {
               input.name = selected$features.numeric[i]
               min = min(data[[input.name]])
               max = max(data[[input.name]])
+              decimal.places = max(getDecimalPlaces(min), getDecimalPlaces(max))
+              step.length = createSliderStepLength(decimal.places)
               mean = mean(data[[input.name]])
               sliderInput(
                 input.name,input.name,
-                min = floor(min),
-                max = ceiling(max),
+                min = as.numeric(min),
+                max = as.numeric(max),
                 value = mean,
-                step = NULL,
-                round = -5)
+                step = step.length,
+                sep = "")
             })
             do.call(tagList, sliders)
             # create HTML tags for all sliders

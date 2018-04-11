@@ -8,7 +8,8 @@ makePredictionsIceSampled = function(data, var, knots, lines, model, task.type) 
   #   knots (numeric): sampled unique values of var
   #   lines (numeric): sampled observations to create ICE curves for
   #   model (obj): mlr trained model
-  #   task.type (string): "regr" or "classif" for regression and classification tasks
+  #   task.type (string): "regr" or "classif" for regression and classification
+  #                       tasks
   # Returns:
   #   a data frame with one column containing all sampled unique values of var;
   #   as many columns as lines with predictions produced by model (ICE curves)
@@ -64,7 +65,8 @@ makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
   #   model (obj): mlr trained model
   #   knots (numeric): sampled unique values of var
   #   selected.rows (numeric): row IDs of data to marginalize over
-  #   task.type (string): "regr" or "classif" for regression and classification tasks
+  #   task.type (string): "regr" or "classif" for regression and classification
+  #                       tasks
   # Returns:
   #   a data frame with one column containing all sampled unique values of var;
   #   as many columns as selected.rows with predictions produced by model
@@ -140,7 +142,8 @@ centerPredictions = function(predictions, center.x, var) {
   return(pred.centered)
 }
 
-makePredictionsAleRegr = function(data, target, model, var1, var2 = NULL, knots) {
+makePredictionsAleRegr = function(data, target, model, var1, var2 = NULL,
+                                  knots) {
   # create predictions for ALE plots
   #
   # Args:
@@ -170,7 +173,7 @@ makePredictionsAleRegr = function(data, target, model, var1, var2 = NULL, knots)
   )
   # ALEPlot function not (yet) completely reliable
   if (any(class(obj) == "warning") | any(class(obj) == "error")) {
-    invisible(return("error"))
+    print(obj)
   } else {
     # no error or warning
     if (is.null(var2)) {

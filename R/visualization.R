@@ -66,7 +66,7 @@ classifPartialDependencePlot = function(pred, var, target, knots) {
     mutate(class = sub('\\..*$','', variable))
   pdp.data = iceplot.data[grep("ave", iceplot.data$variable), ]
 
-  ggplot(
+  plot = ggplot(
     data = pdp.data,
     aes_string( x = var, y = "value", group = "class", color = "class")) +
     geom_line(size = 0.3) +
@@ -74,6 +74,7 @@ classifPartialDependencePlot = function(pred, var, target, knots) {
          color = "Class") +
     theme(legend.position= "bottom", legend.direction = "vertical") +
     theme_pubr()
+  return(plot)
 }
 
 regrPartialDependencePlot = function(pred, var, target, knots) {
@@ -85,7 +86,7 @@ regrPartialDependencePlot = function(pred, var, target, knots) {
   #   target (string): selected target variable for predictons
   # Returns:
   #   ggplot2 object
-  ggplot() +
+  plot = ggplot() +
     geom_line(
       data = pred,
       aes_string(x = var, y = "preds.ave", group = factor(var)),
@@ -93,6 +94,7 @@ regrPartialDependencePlot = function(pred, var, target, knots) {
       size = 1) +
     labs(y =  target) +
     theme_pubr()
+  return(plot)
 }
 
 regrIcePlot = function(pred, var, target, knots, lines, centered, center.x) {
@@ -327,17 +329,15 @@ scatterPlot3D = function(data, target, var, highlighted = NULL) {
     plot = plot %>%
       add_markers(data = data[which(rownames(data) %in% highlighted), ],
                   marker = list(size = 5, color = "brown"))
-    return(plot)
-  } else {
-    return(plot)
-  }
+  } else {}
+  return(plot)
 }
 
 placeholderPlot = function() {
   # placeholder plot appears, if no observations can be found for predictions
   # Returns:
   #   ggplot2 object
-  ggplot() +
+  plot = ggplot() +
     annotate(geom = "text",
              x = 1, y = 1,
              label = "No observations detected.
@@ -345,10 +345,12 @@ placeholderPlot = function() {
              size = 5
     ) +
     theme_pubr()
+  return(plot)
 }
 
 # arrangeGridSharedLegend = function(plots, position = c("bottom", "right")) {
-#   
+#   function to arrange multiple ggplots with shared legend
+#
 #   position = match.arg(position)
 #   g = ggplotGrob(plots[[1]] + theme(legend.position=position))$grobs
 #   legend = g[[which(sapply(g, function(x) x$name) == "guide-box")]]
