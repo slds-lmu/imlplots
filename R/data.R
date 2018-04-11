@@ -55,3 +55,32 @@
 #' }
 #' @source \url{https://archive.ics.uci.edu/ml/machine-learning-databases/forest-fires/}
 "fire"
+
+
+
+
+#' Titanic Passenger Survival Data Set
+#'
+#' A data set that has survival data of the titanic passengers
+#'
+#' @docType data
+#'
+#' @usage data(titanic)
+#'
+#' @format A data frame with 1309 rows and 11 columns:
+#' \describe{
+#' \item{\code{Pclass}}{Ticket class, 1 = 1st, 2 = 2nd, 3 = 3rd}
+#' \item{\code{Survived}}{Survival, 0 = No, 1 = Yes}
+#' \item{\code{Sex}}{Sex}
+#' \item{\code{Age}}{Age in years}
+#' \item{\code{Sibsp}}{# of siblings / spouses aboard the Titanic}
+#' \item{\code{Parch}}{# of parents / children aboard the Titanic}
+#' \item{\code{Fare}}{Passenger fare}
+#' \item{\code{Embarked}}{Port of Embarkation, C = Cherbourg, Q = Queenstown, S = Southampton}
+#' \item{\code{farePp}}{data$farePp = data$Fare / (data$Parch + data$Sibsp + 1)}
+#' \item{\code{deck}}{Passenger loacation}
+#' \item{\code{portside}}{Starside or portside}
+#' }
+#' @source \url{https://www.kaggle.com/c/titanic/data}
+"titanic"
+

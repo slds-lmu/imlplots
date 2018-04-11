@@ -272,6 +272,8 @@ knitr::include_graphics('pictures/settings7.PNG')
 knitr::include_graphics('pictures/settings8.PNG')
 ```
 
+Please note that there is no second-order ALE plot for classification tasks.
+
 ### Code for Copy & Paste
 ```{r, eval=FALSE}
 library(imlplots)
