@@ -1,0 +1,42 @@
+\documentclass{article}
+\usepackage[a4paper, left=2cm, right=2cm, top=2cm, bottom=2cm]{geometry}
+
+\begin{document}
+\begin{thebibliography}
+
+  \bibitem{Goldstein.ice.pdp}
+  Alex Goldstein, Adam Kapelner, Justin Bleich, Emil Pitkin \\
+  \textit{Peeking Inside the Black Box: Visualizing Statistical Learning with Plots of Individual Conditional Expectation}, \\
+  Journal of Computational and Graphical Statistics 24.1 (2015): 44-65
+
+  \bibitem{Jones.mmpf}
+  Zachary M. Jones \\
+  \textit{mmpf: Monte-Carlo Methods for Prediction Functions}, \\
+  \url{https://CRAN.R-project.org/package=mmpf}, 2017
+
+  \bibitem{Krause.app}
+  Josua Krause, Adam Perer, and Enrico Bertini \\
+  \textit{Using Visual Analytics to Interpret Predictive Machine Learning Models}, \\
+  \url{https://pdfs.semanticscholar.org/5119/4f3d980d05cf25c34cec9367a7605703692b.pdf}, \\
+  arXiv preprint arXiv:1606.05685, 2016
+
+  \bibitem{Krause.paper}
+  Josua Krause, Adam Perer, and Kenney Ng \\
+  \texit{Interacting with Predictions: Visual Inspection of Black-box Machine Learning Models}, \\ \url{https://josuakrause.github.io/info/material/chi2016-prospector.pdf}, \\
+  Proceedings of the 2016 CHI Conference on Human Factors in Computing Systems. ACM, 2016
+
+  \bibitem{Apley.ale}
+  Daniel W. Apley \\
+  \textit{Visualizing the Effects of Predictor Variables in Black Box Supervised Learning Models}, \\
+  \url{https://arxiv.org/ftp/arxiv/papers/1612/1612.08468.pdf},\\
+  arXiv preprint arXiv:1612.08468, 2016
+
+  \bibitem{Apley.ale.package}
+  Dan Apley \\
+  \texit{ALEPlot: Accumulated Local Effects (ALE) Plots and Partial Dependence (PD) Plots},\\ \url{https://CRAN.R-project.org/package=ALEPlot}, 2017
+
+  \end{thebibliography}
+
+
+
+\end{document}
