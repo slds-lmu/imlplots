@@ -50,7 +50,7 @@ The task structure is determined by `mlr` package.
 boston.task = makeRegrTask(data = boston, target = "medv")
 ```
 
-The `imlplots` dashboard allows the comparison of multiple learning algorithms, therefore we fit two different models - first a random forest and second a SVM.
+The `imlplots` dashboard allows the comparison of multiple learning algorithms, therefore we fit two different models - first a random forest and second a GLM.
 ```{r}
 rf.mod = train("regr.randomForest", boston.task)
 glm.mod = train("regr.glm", boston.task)

@@ -58,7 +58,7 @@ We create a regression task with `medv` as target variable. The task structure i
 boston.task = makeRegrTask(data = boston, target = "medv")
 ```
 
-The `imlplots` dashboard allows the comparison of multiple learning algorithms, therefore we fit two different models - first a random forest and second a SVM.
+The `imlplots` dashboard allows the comparison of multiple learning algorithms, therefore we fit two different models - first a random forest and second a GLM.
 
 ``` r
 rf.mod = train("regr.randomForest", boston.task)
