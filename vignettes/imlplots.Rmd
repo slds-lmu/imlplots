@@ -93,7 +93,7 @@ imlplots(data = boston, task = boston.task, models = mod.list)
 To show how you can use the `imlplots` Shiny app for regression tasks we use fire data, where the burned area of forests due to fires should be analyzed. 
 
 ```{r head fire}
-head(fire)
+print(summarizeColumns(fire)[, -c(5, 6, 7)], digits = 4)
 ```
 
 The target variable is `area`, which is between 0.00 and 1090.84 ha.
@@ -106,18 +106,20 @@ We create a regression task with target variable `area`.
 fire.task = makeRegrTask(data = fire, target = "area")
 ```
 
-Next we train some `mlr` models and create a list of models.
+Next we train several `mlr` models and save them in a list of models.
 Note: The order in your model list will determine the model order in the Shiny dashboard.
+
 ```{r models fire}
 fire.rf = train("regr.randomForest", fire.task)
 fire.glm = train("regr.glm", fire.task)
+fire.lm = train("regr.lm", fire.task)
 
-fire.models = list(fire.rf, fire.glm)
+mod.list = list(fire.rf, fire.glm, fire.lm)
 ```
 
 No we can open the `imlplots` Shiny app.
 ```{r imlplots fire, eval=FALSE}
-imlplots(data = fire, task = fire.task, models = fire.models)
+imlplots(data = fire, task = fire.task, models = mod.list)
 ```
 
 The Shiny dashboard contains four tabs
@@ -127,7 +129,8 @@ The Shiny dashboard contains four tabs
 * Plots
 * Learner Summary
 
-The `Data` tab shows your used input data. This data is taken to generate IML plots.
+### Data
+The `Data` tab shows your input data. This data is taken to generate IML plots.
 If you want to check how changes in the data effect your plot, you can simply filter in the `Data` tab.
 
 ```{r echo=FALSE, out.width='100%'}
@@ -136,9 +139,10 @@ knitr::include_graphics('pictures/data.PNG')
 
 For filtering two options are given
 
-1. Plot all sampled observations: In this setting you can filter via the filters beneath the column titles and all rows will be used for plotting.
-2. Plot indiviudal observations: In this setting after using the filters, you have to manually select specific rows.
+1. `Plot all sampled observations`: In this setting you can filter via the filters beneath the column titles and all rows will be used for plotting.
+2. `Plot indiviudal observations`: In this setting after using the filters, you have to manually select specific rows.
 
+### Settings
 The next tab `Settings` contains all possible plot settings and the selected IML plot.
 
 ```{r echo=FALSE, out.width='100%'}
@@ -151,8 +155,9 @@ There are various settings
 2. `Choose predictive model`: Choose one of your fitted models. The order in the dropdown is the order of your list.
 3. `Choose plot type`: We offer PDP, ICE and ALE plots
 If you select ICE plot, you will get a new selection field. Possible are `centered` and `regular` ICE plots
-4. `Variable of interest`: This dropdown will determine the x-axis of your plot
+4. `Variable of interest`: This dropdown will determine the x-axis of your plot and will determine the effect that is plotted 
 
+##### PDP
 On the right side of the dashboard page, the selected plot is shown.
 
 To check out effects, you can turn on `Select adjustable features`. This option allows you to set one of the variables to a specifc value.
@@ -163,6 +168,7 @@ knitr::include_graphics('pictures/settings2.PNG')
 
 It is also possible to change the number of knots and lines (individual observations) with the shown sliders.
 
+##### ICE Plot
 The ICE plot contains all sampled, individual observations in blue. The red line is from PDP.
 
 ```{r echo=FALSE, out.width='100%'}
@@ -175,6 +181,7 @@ As described above, you can select between `Regular` and `Centered` ICE plots.
 knitr::include_graphics('pictures/settings4.PNG')
 ```
 
+##### ALE Plot
 The ALE plot can be selected, too.
 Please keep in mind, that the ALE plot has a different y-axis than the PDP and ICE plot.
 
@@ -182,7 +189,7 @@ Please keep in mind, that the ALE plot has a different y-axis than the PDP and I
 knitr::include_graphics('pictures/settings5.PNG')
 ```
 
-For ALE plots you can swith between two `ALE Plot Mode`s. The `Main Effets` mode allows you to select one variable of interest and shows its interaction effect.
+For ALE plots you can swith between two `ALE Plot Modes`. The `Main Effets` mode allows you to select one variable of interest and shows its interaction effect.
 The `Second Order Effects` setting allows to select another `ALE interaction variable` and therefore shows the effect for this extra variable too.
 If you select `plotly` as graphics package, the second order effects ALE plot will be a 3D plot.
 
@@ -190,7 +197,8 @@ If you select `plotly` as graphics package, the second order effects ALE plot wi
 knitr::include_graphics('pictures/ale3d.PNG')
 ```
 
-The third tab `Plots` shows the IML plot in full screen via the sub-tab `Zoomed plot`.
+### Plots
+The third tab `Plots` shows the selected IML plot in full screen via the sub-tab `Zoomed plot`.
 The sub-tab `Scatterplot` shows the filtered and unfiltered scatterplot between the `variable of interest` and the `target` variable of the model.
 
 In the `Data` tab we filtered for a high value of burned area and selected three individual observations.
@@ -207,7 +215,8 @@ knitr::include_graphics('pictures/plots2.PNG')
 
 The unfiltered data scatterplot shows all data points and also the three individual observations (in red).
 
-The fourth tab `Learner summary` shows the currently selected learner summary. If you want to see another summary, you have to select another model in the `Settings` tab.
+### Learner Summary
+The fourth tab `Learner Summary` shows the currently selected learner summary. If you want to see another summary, you have to select another model in the `Settings` tab.
 
 ```{r echo=FALSE, out.width='100%'}
 knitr::include_graphics('pictures/learner1.PNG')
@@ -217,26 +226,36 @@ knitr::include_graphics('pictures/learner1.PNG')
 ```{r, eval=FALSE}
 library(imlplots)
 
-fire.task = makeRegrTask(data = fire, target = "area")
-
 fire.rf = train("regr.randomForest", fire.task)
-fire.lm = train("regr.lm", fire.task)
 fire.glm = train("regr.glm", fire.task)
+fire.lm = train("regr.lm", fire.task)
 
-fire.models = list(fire.rf, fire.lm, fire.glm)
+mod.list = list(fire.rf, fire.glm, fire.lm)
 
-imlplots(data = fire, task = fire.task, models = fire.models)
+imlplots(data = fire, task = fire.task, models = mod.list)
 ```
 
 ## IML Plots for Classification Tasks
 
 For the classification example only the differences to the regression example will be explained.
-We use the titanic data set from [kaggle](https://www.kaggle.com/c/titanic) for this example.
+We use the titanic data set, where the aim is to predict the survival chance.
 
-Again we create a task. This time we only fit one random forest. Afterwards we open the app.
-```{r, eval=FALSE}
+```{r}
+print(summarizeColumns(titanic)[, -c(5, 6, 7)], digits = 4)
+```
+
+Again we create a task and fit a model. 
+
+```{r}
+library(imlplots)
+
 titanic.task = makeClassifTask(data = titanic, target = "Survived")
 titanic.rf = train("classif.randomForest", titanic.task)
+```
+
+Next we open the Shiny dashboard.
+
+```{r, eval=FALSE}
 imlplots(data = titanic, task = titanic.task, titanic.rf)
 ```
 
@@ -261,7 +280,6 @@ knitr::include_graphics('pictures/settings8.PNG')
 library(imlplots)
 
 titanic.task = makeClassifTask(data = titanic, target = "Survived")
-
 titanic.rf = train("classif.randomForest", titanic.task)
 
 imlplots(data = titanic, task = titanic.task, titanic.rf)
