@@ -21,7 +21,6 @@ Depends:
 	shiny,
 	shinyjs,
 	shinydashboard,
-	data.table,
 	ggpubr,
 	ALEPlot
 License: BSD_2_clause
