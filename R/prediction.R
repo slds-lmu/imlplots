@@ -1,4 +1,5 @@
-makePredictionsIceSampled = function(data, var, knots, lines, model, task.type) {
+makePredictionsIceSampled = function(data, var, knots, lines, model,
+                                     task.type) {
   # create Monte Carlo estimates for ICE and PDP curve with random sampling
   #
   # Args:

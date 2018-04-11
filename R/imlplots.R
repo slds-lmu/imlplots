@@ -7,7 +7,7 @@
 #'
 #' There are three types of plots: Partial Dependence Plots (PDP), Individual Conditional
 #' Expectation (ICE) plots and Accumulated Local Effects (ALE) plots.
-#' @param data A data frame of the test data.
+#' @param data Input data frame.
 #' Has to contain exactly the same variables as the training data.
 #' @param task The mlr task the models were being trained on,
 #' e.g. iris.task = makeClassifTask(data = iris, target = "Species").
@@ -85,7 +85,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
   features = names(data)[!names(data) %in% target]
   features.numeric = features[sapply(data[!names(data) %in% target], is.numeric)]
   features.factor = features[sapply(data[!names(data) %in% target], is.factor)]
-  
+
   do.call(
     modelCheck,
     list(data = data, models = models, features = features, model.check))
@@ -668,7 +668,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
 
     # --------------------------------------------------------------------------
     # Observers
-     
+
      observeEvent({
        # observer for calculating predictions
        df$values.filtered
@@ -714,7 +714,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
              shiny::req(selected$table.rows %in% as.numeric(
                row.names(df$values.filtered)))
            } else {}
-           
+
            shiny::withProgress(
              message = "Calculating predictions..",
              detail = "Please wait.",
@@ -737,7 +737,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
              shiny::req(!is.null(selected$iceplot.center.x))
              shiny::req(!is.na(selected$iceplot.center.x))
              shiny::req(selected$var %in% names(prediction))
-             
+
              shiny::withProgress(
                message = "Centering predictions..",
                detail = "Please wait.",
@@ -755,7 +755,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
          }
        }
      )
-     
+
      observeEvent({
        # reload button action on top right corner
        input$reload},
@@ -763,7 +763,7 @@ imlplots = function(data, task, models, model.check = "all.features") {
          session$reload()
        }
      )
-     
+
      observeEvent({
        # line sampling not necessary when individual observations are selected
        # or in ale plot mode
