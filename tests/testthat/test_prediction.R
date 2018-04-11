@@ -123,21 +123,24 @@ test_that(
     knots = sample(seq(n.rows), 1)
     features = colnames(data)[-match(target, colnames(data))]
     var = sample(features, 1)
+    levels = levels(data[[target]])
     row.selection = sample(seq(n.rows), sample(seq(n.rows), 1))
     prediction = makePredictionsIce(
       data = data,
       var = var,
       model = mod$learner.model,
       knots = knots,
-      lines = lines,
       task.type = "classif",
       selected.rows = row.selection,
       data.selection.mode = "individual")
+    dim(prediction)
+    expected.rows = knots
+    expected.cols = length(row.selection) * length(levels) + 1 + length(levels)
+
     expect_data_frame(
       prediction,
-      nrows = knots,
-      ncols = length(levels) * lines + 3 + 1
-    )
+      nrows = expected.rows,
+      ncols = expected.cols)
     expect_true(var %in% colnames(prediction))
   }
 )
