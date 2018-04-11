@@ -31,11 +31,11 @@ library(imlplots)
 
 
 # Quickstart
-You can fit classification and regression problems from the `mlr` package and analyse possible interaction effects in the Shiny dasbhoard.
+You can fit classification and regression problems from the `mlr` package and analyse possible interaction effects in a Shiny dasbhoard.
 
 For quickstart we take the popular Boston Housing data, where we want to predict the median housing price in Boston.
 ```{r}
-head(boston)
+print(summarizeColumns(boston)[, -c(5, 6, 7)], digits = 4)
 ```
 
 For using `imlplots` Shiny dashboard, three input arguments need to be specified
@@ -84,10 +84,8 @@ imlplots(data = boston, task = boston.task, models = mod.list)
 
 # References
 
-* [PDP and ICE plots](https://arxiv.org/pdf/1309.6392.pdf)
-* [mmpf R package](https://github.com/zmjones/mmpf)
-* [ALE plots](https://arxiv.org/abs/1612.08468)
-* [ALE R package](https://cran.r-project.org/web/packages/ALEPlot/index.html)
+* [References](https://github.com/juliafried/imlplots/raw/master/paper/references.pdf)
+
 
 
 

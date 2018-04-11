@@ -22,28 +22,29 @@ library(imlplots)
 Quickstart
 ==========
 
-You can fit classification and regression problems from the `mlr` package and analyse possible interaction effects in the Shiny dasbhoard.
+You can fit classification and regression problems from the `mlr` package and analyse possible interaction effects in a Shiny dasbhoard.
 
 For quickstart we take the popular Boston Housing data, where we want to predict the median housing price in Boston.
 
 ``` r
-head(boston)
+print(summarizeColumns(boston)[, -c(5, 6, 7)], digits = 4)
 ```
 
-    ##      crim zn indus chas   nox    rm  age    dis rad tax ptratio  black
-    ## 1 0.00632 18  2.31    0 0.538 6.575 65.2 4.0900   1 296    15.3 396.90
-    ## 2 0.02731  0  7.07    0 0.469 6.421 78.9 4.9671   2 242    17.8 396.90
-    ## 3 0.02729  0  7.07    0 0.469 7.185 61.1 4.9671   2 242    17.8 392.83
-    ## 4 0.03237  0  2.18    0 0.458 6.998 45.8 6.0622   3 222    18.7 394.63
-    ## 5 0.06905  0  2.18    0 0.458 7.147 54.2 6.0622   3 222    18.7 396.90
-    ## 6 0.02985  0  2.18    0 0.458 6.430 58.7 6.0622   3 222    18.7 394.12
-    ##   lstat medv
-    ## 1  4.98 24.0
-    ## 2  9.14 21.6
-    ## 3  4.03 34.7
-    ## 4  2.94 33.4
-    ## 5  5.33 36.2
-    ## 6  5.21 28.7
+    ##       name    type na     mean       min     max nlevs
+    ## 1     crim numeric  0   3.6135   0.00632  88.976     0
+    ## 2       zn numeric  0  11.3636   0.00000 100.000     0
+    ## 3    indus numeric  0  11.1368   0.46000  27.740     0
+    ## 4     chas  factor  0       NA  35.00000 471.000     2
+    ## 5      nox numeric  0   0.5547   0.38500   0.871     0
+    ## 6       rm numeric  0   6.2846   3.56100   8.780     0
+    ## 7      age numeric  0  68.5749   2.90000 100.000     0
+    ## 8      dis numeric  0   3.7950   1.12960  12.127     0
+    ## 9      rad  factor  0       NA  17.00000 132.000     9
+    ## 10     tax numeric  0 408.2372 187.00000 711.000     0
+    ## 11 ptratio numeric  0  18.4555  12.60000  22.000     0
+    ## 12   black numeric  0 356.6740   0.32000 396.900     0
+    ## 13   lstat numeric  0  12.6531   1.73000  37.970     0
+    ## 14    medv numeric  0  22.5328   5.00000  50.000     0
 
 For using `imlplots` Shiny dashboard, three input arguments need to be specified
 
@@ -98,7 +99,4 @@ Further Examples
 References
 ==========
 
--   [PDP and ICE plots](https://arxiv.org/pdf/1309.6392.pdf)
--   [mmpf R package](https://github.com/zmjones/mmpf)
--   [ALE plots](https://arxiv.org/abs/1612.08468)
--   [ALE R package](https://cran.r-project.org/web/packages/ALEPlot/index.html)
+-   [References](https://github.com/juliafried/imlplots/raw/master/paper/references.pdf)
