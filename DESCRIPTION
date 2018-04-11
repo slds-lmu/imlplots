@@ -13,8 +13,7 @@ Author: c(
 Depends:
   R (>= 3.4.2),
   mlr,
-  checkmate
-Imports:
+  checkmate,
 	mmpf,
 	ggplot2,
 	plotly,
