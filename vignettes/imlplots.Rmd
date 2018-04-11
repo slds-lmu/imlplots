@@ -37,11 +37,11 @@ library(imlplots)
 ```
 
 # Quickstart
-You can fit classification and regression problems from the `mlr` package and analyse possible interaction effects in the Shiny dasbhoard.
+You can fit classification and regression problems from the `mlr` package and analyse possible interaction effects in a Shiny dasbhoard.
 
 For quickstart we take the popular Boston Housing data, where we want to predict the median housing price in Boston.
-```{r head boston}
-head(boston)
+```{r}
+print(summarizeColumns(boston)[, -c(5, 6, 7)], digits = 4)
 ```
 
 For using `imlplots` Shiny dashboard, three input arguments need to be specified
@@ -56,31 +56,28 @@ The task structure is determined by `mlr` package.
 boston.task = makeRegrTask(data = boston, target = "medv")
 ```
 
-The `imlplots` dashboard allows the comparison of multiple learning algorithms, therefore we fit two different models - first a random forest and second a SVM.
-```{r mod boston}
+The `imlplots` dashboard allows the comparison of multiple learning algorithms, therefore we fit two different models - first a random forest and second a GLM.
+```{r}
 rf.mod = train("regr.randomForest", boston.task)
 glm.mod = train("regr.glm", boston.task)
 ```
 
 The input for the Shiny app is a list of learners.
-```{r mod list boston}
+```{r}
 mod.list = list(rf.mod, glm.mod)
 ```
 
 Now the Shiny app can be used.
-```{r boston imlplots, eval=FALSE}
+```{r, eval=FALSE}
 imlplots(data = boston, task = boston.task, models = mod.list)
 ```
 
 ## Code for Copy & Paste
 ```{r, eval=FALSE}
-library(imlplots)
-
 boston.task = makeRegrTask(data = boston, target = "medv")
 
 rf.mod = train("regr.randomForest", boston.task)
 glm.mod = train("regr.glm", boston.task)
-
 mod.list = list(rf.mod, glm.mod)
 
 imlplots(data = boston, task = boston.task, models = mod.list)
