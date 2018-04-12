@@ -67,7 +67,7 @@
 #'
 #' @usage data(titanic)
 #'
-#' @format A data frame with 1309 rows and 11 columns:
+#' @format A data frame with 1309 rows and 8 columns:
 #' \describe{
 #' \item{\code{Pclass}}{Ticket class, 1 = 1st, 2 = 2nd, 3 = 3rd}
 #' \item{\code{Survived}}{Survival, 0 = No, 1 = Yes}
@@ -77,9 +77,6 @@
 #' \item{\code{Parch}}{# of parents / children aboard the Titanic}
 #' \item{\code{Fare}}{Passenger fare}
 #' \item{\code{Embarked}}{Port of Embarkation, C = Cherbourg, Q = Queenstown, S = Southampton}
-#' \item{\code{farePp}}{data$farePp = data$Fare / (data$Parch + data$Sibsp + 1)}
-#' \item{\code{deck}}{Passenger loacation}
-#' \item{\code{portside}}{Starside or portside}
 #' }
 #' @source \url{https://www.kaggle.com/c/titanic/data}
 "titanic"
