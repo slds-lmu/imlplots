@@ -74,6 +74,8 @@ imlplots(data = boston, task = boston.task, models = mod.list)
 
 ## Code for Copy & Paste
 ```{r, eval=FALSE}
+library(imlplots)
+
 boston.task = makeRegrTask(data = boston, target = "medv")
 
 rf.mod = train("regr.randomForest", boston.task)
@@ -109,9 +111,9 @@ Note: The order in your model list will determine the model order in the Shiny d
 ```{r models fire}
 fire.rf = train("regr.randomForest", fire.task)
 fire.glm = train("regr.glm", fire.task)
-fire.lm = train("regr.lm", fire.task)
+fire.svm = train("regr.svm", fire.task)
 
-mod.list = list(fire.rf, fire.glm, fire.lm)
+mod.list = list(fire.rf, fire.glm, fire.svm)
 ```
 
 No we can open the `imlplots` Shiny app.
@@ -223,11 +225,13 @@ knitr::include_graphics('pictures/learner1.PNG')
 ```{r, eval=FALSE}
 library(imlplots)
 
+fire.task = makeRegrTask(data = fire, target = "area")
+
 fire.rf = train("regr.randomForest", fire.task)
 fire.glm = train("regr.glm", fire.task)
-fire.lm = train("regr.lm", fire.task)
+fire.svm = train("regr.svm", fire.task)
 
-mod.list = list(fire.rf, fire.glm, fire.lm)
+mod.list = list(fire.rf, fire.glm, fire.svm)
 
 imlplots(data = fire, task = fire.task, models = mod.list)
 ```
