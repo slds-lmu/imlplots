@@ -66,7 +66,7 @@ classifPartialDependencePlot = function(pred, var, target, knots) {
     mutate(class = sub('\\..*$','', variable))
   pdp.data = iceplot.data[grep("ave", iceplot.data$variable), ]
 
-  ggplot(
+  plot = ggplot(
     data = pdp.data,
     aes_string( x = var, y = "value", group = "class", color = "class")) +
     geom_line(size = 0.3) +
@@ -74,6 +74,7 @@ classifPartialDependencePlot = function(pred, var, target, knots) {
          color = "Class") +
     theme(legend.position= "bottom", legend.direction = "vertical") +
     theme_pubr()
+  return(plot)
 }
 
 regrPartialDependencePlot = function(pred, var, target, knots) {
@@ -85,7 +86,7 @@ regrPartialDependencePlot = function(pred, var, target, knots) {
   #   target (string): selected target variable for predictons
   # Returns:
   #   ggplot2 object
-  ggplot() +
+  plot = ggplot() +
     geom_line(
       data = pred,
       aes_string(x = var, y = "preds.ave", group = factor(var)),
@@ -93,6 +94,7 @@ regrPartialDependencePlot = function(pred, var, target, knots) {
       size = 1) +
     labs(y =  target) +
     theme_pubr()
+  return(plot)
 }
 
 regrIcePlot = function(pred, var, target, knots, lines, centered, center.x) {
@@ -179,7 +181,6 @@ regrAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
     # no error or warning
     if (is.null(var2)) {
       # line plot
-      print(data)
       plot = ggplot(
         data = data,
         aes_string(x = var1, y = "ale.effect", group = factor(var1))) +
@@ -197,12 +198,12 @@ regrAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
       } else if (gfx.package == "plotly") {
         # 3d scatter
         df = acast(data, get(var1) ~ get(var2), value.var = "ale.effect", drop = FALSE)
-        x = as.numeric(rownames(df))
-        y = as.numeric(colnames(df))
-
+        x = rownames(df)
+        x.axis.type = ifelse(is.factor(data[[var1]]), "category", "linear")
+        y = colnames(df)
         plot = plot_ly(x = x, y = y, z = df, type = "surface") %>%
         layout(scene = list(
-          xaxis = list(title = var1),
+          xaxis = list(title = var1, type = x.axis.type),
           yaxis = list(title = var2),
           zaxis = list(title = paste("ALE effect on", target)))
         )
@@ -212,7 +213,7 @@ regrAlePlot = function(data, target, var1, var2 = NULL, knots = NULL,
   return(plot)
 }
 
-classifAlePlot = function(data, target, var) {
+classifAlePlot = function(data, target, target.levels = NULL, var1, var2) {
   # ALE plots for classification tasks
   #
   # Args:
@@ -237,17 +238,42 @@ classifAlePlot = function(data, target, var) {
       ) +
       theme_pubr()
   } else {
-    # no error or warning
-    aleplot.data = melt(data, id.vars = var)
-
-    plot = ggplot(
-      data = aleplot.data,
-      aes_string(x = var, y = "value", group = "variable", color = "variable")) +
-      geom_line(size = 0.3) +
-      labs(y = paste("ALE effect on probability for classif.", target, "as..", sep = " "),
-           color = "Class") +
-      theme(legend.position= "bottom", legend.direction = "vertical") +
-      theme_pubr()
+    if (is.null(var2)) {
+      # no error or warning
+      aleplot.data = melt(data, id.vars = var1)
+      
+      plot = ggplot(
+        data = aleplot.data,
+        aes_string(x = var1, y = "value", group = "variable", color = "variable")) +
+        geom_line(size = 0.3) +
+        labs(y = paste("ALE effect on probability for classif.", target, "as..", sep = " "),
+             color = "Class") +
+        theme(legend.position= "bottom", legend.direction = "vertical") +
+        theme_pubr()
+    } else {
+      x1 = data$x[[1]]
+      x2 = data$x[[2]]
+      f.list = data$f
+      plot.list = lapply(
+        seq(target.levels),
+        FUN = function(class.index) {
+          df = f.list[[class.index]] 
+          rownames(df) = x1
+          colnames(df) = x2
+          df = melt(df, na.rm = TRUE)
+          colnames(df) = c(var1, var2, "ale.effect")
+          plot = ggplot(
+            data = df,
+            aes_string(x = var1, y = var2, color = "ale.effect")) +
+            stat_summary_2d(aes(z = ale.effect), fun = mean, bins = 50) +
+            theme_pubr()
+          return(plot)}
+      )
+      # n = length(plot.list)
+      # n.col = floor(sqrt(n))
+      # plot = do.call("arrangeGrob", c(plot.list, ncol = n.col))
+      plot = arrangeGridSharedLegend(plot.list)
+    }
   }
   return(plot)
 }
@@ -274,7 +300,11 @@ scatterPlot = function(data, target, var, highlighted) {
   }
   plot = ggplot(data = data, aes_string(y = target, x = var)) +
     geom_point(size = pointsize, color = "steelblue", shape = 1) +
-    geom_point(data = data[which(rownames(data) %in% highlighted), ], shape = 19, color = "brown", size = 3) +
+    geom_point(
+      data = data[which(rownames(data) %in% highlighted), ],
+      shape = 19,
+      color = "brown",
+      size = 3) +
     theme_pubr()
   return(plot)
 }
@@ -299,17 +329,15 @@ scatterPlot3D = function(data, target, var, highlighted = NULL) {
     plot = plot %>%
       add_markers(data = data[which(rownames(data) %in% highlighted), ],
                   marker = list(size = 5, color = "brown"))
-    return(plot)
-  } else {
-    return(plot)
-  }
+  } else {}
+  return(plot)
 }
 
 placeholderPlot = function() {
   # placeholder plot appears, if no observations can be found for predictions
   # Returns:
   #   ggplot2 object
-  ggplot() +
+  plot = ggplot() +
     annotate(geom = "text",
              x = 1, y = 1,
              label = "No observations detected.
@@ -317,4 +345,33 @@ placeholderPlot = function() {
              size = 5
     ) +
     theme_pubr()
+  return(plot)
 }
+
+# arrangeGridSharedLegend = function(plots, position = c("bottom", "right")) {
+#   function to arrange multiple ggplots with shared legend
+#
+#   position = match.arg(position)
+#   g = ggplotGrob(plots[[1]] + theme(legend.position=position))$grobs
+#   legend = g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+#   lheight = sum(legend$height)
+#   lwidth = sum(legend$width)
+#   gl = lapply(plots, function(x) x + theme_pubr(legend = "none"))
+#   
+#   combined = switch(
+#     position,
+#     "bottom" = arrangeGrob(
+#       do.call(arrangeGrob, gl),
+#       legend,
+#       ncol = 1,
+#       heights = unit.c(unit(1, "npc") - lheight, lheight)),
+#     "right" = arrangeGrob(
+#       do.call(arrangeGrob, gl),
+#       legend,
+#       ncol = 2,
+#       widths = unit.c(unit(1, "npc") - lwidth, lwidth)))
+#   #   combined
+#   dev.off()
+#   grid.draw(combined)
+# }
+

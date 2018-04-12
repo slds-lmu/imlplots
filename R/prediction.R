@@ -1,4 +1,5 @@
-makePredictionsIceSampled = function(data, var, knots, lines, model, task.type) {
+makePredictionsIceSampled = function(data, var, knots, lines, model,
+                                     task.type) {
   # create Monte Carlo estimates for ICE and PDP curve with random sampling
   #
   # Args:
@@ -8,7 +9,8 @@ makePredictionsIceSampled = function(data, var, knots, lines, model, task.type) 
   #   knots (numeric): sampled unique values of var
   #   lines (numeric): sampled observations to create ICE curves for
   #   model (obj): mlr trained model
-  #   task.type (string): "regr" or "classif" for regression and classification tasks
+  #   task.type (string): "regr" or "classif" for regression and classification
+  #                       tasks
   # Returns:
   #   a data frame with one column containing all sampled unique values of var;
   #   as many columns as lines with predictions produced by model (ICE curves)
@@ -40,7 +42,7 @@ makePredictionsIceSampled = function(data, var, knots, lines, model, task.type) 
       }
     )
   }
-  var.vector = prediction[, 1, which = FALSE]
+  var.vector = prediction[, 1, with = FALSE]
   if (is.numeric(var.vector)) {
     prediction[ , 1] = round(var.vector, digits = 5)
   } else {}
@@ -64,7 +66,8 @@ makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
   #   model (obj): mlr trained model
   #   knots (numeric): sampled unique values of var
   #   selected.rows (numeric): row IDs of data to marginalize over
-  #   task.type (string): "regr" or "classif" for regression and classification tasks
+  #   task.type (string): "regr" or "classif" for regression and classification
+  #                       tasks
   # Returns:
   #   a data frame with one column containing all sampled unique values of var;
   #   as many columns as selected.rows with predictions produced by model
@@ -101,7 +104,7 @@ makePredictionsIceSelected = function(data, var, model, knots, selected.rows,
       }
     )
   }
-  var.vector = prediction[, 1, which = FALSE]
+  var.vector = prediction[, 1, with = FALSE]
   if (is.numeric(var.vector)) {
     prediction[ , 1] = round(var.vector, digits = 5)
   } else {}
@@ -140,7 +143,8 @@ centerPredictions = function(predictions, center.x, var) {
   return(pred.centered)
 }
 
-makePredictionsAleRegr = function(data, target, model, var1, var2 = NULL, knots) {
+makePredictionsAleRegr = function(data, target, model, var1, var2 = NULL,
+                                  knots) {
   # create predictions for ALE plots
   #
   # Args:
@@ -170,7 +174,7 @@ makePredictionsAleRegr = function(data, target, model, var1, var2 = NULL, knots)
   )
   # ALEPlot function not (yet) completely reliable
   if (any(class(obj) == "warning") | any(class(obj) == "error")) {
-    invisible(return("error"))
+    print(obj)
   } else {
     # no error or warning
     if (is.null(var2)) {
@@ -189,7 +193,7 @@ makePredictionsAleRegr = function(data, target, model, var1, var2 = NULL, knots)
   }
 }
 
-makePredictionsAleClassif = function(data, target, model, var) {
+makePredictionsAleClassif = function(data, target, model, var1, var2) {
 
   var.levels = levels(data[[target]])
 
@@ -202,7 +206,7 @@ makePredictionsAleClassif = function(data, target, model, var) {
       data[ , -which(names(data) == target)],
       model,
       pred.fun = pred.function,
-      J = var)},
+      J = c(var1, var2))},
       error = function(e) return(e),
       warning = function(w) return(w)
     )
@@ -224,11 +228,17 @@ makePredictionsAleClassif = function(data, target, model, var) {
     # no errors or warnings
     var.values = ale.outputs[[1]]$x.values
     pred = lapply(ale.outputs, FUN = function(obj) return(obj$f.values))
-    pred = do.call(cbind.data.frame, pred)
-    pred = do.call(cbind.data.frame, list(var.values, pred))
-    colnames(pred) = c(var, var.levels)
-
-    return(pred)
+    if (is.null(var2)) {
+      pred = do.call(cbind.data.frame, pred)
+      pred = do.call(cbind.data.frame, list(var.values, pred))
+      colnames(pred) = c(var1, var.levels)
+      # return data frame with 2 columns
+      return(pred)
+    } else {
+      # with interaction variable
+      # return list with nr of levels entries ; elements are interact. matrices
+      return(list("x" = var.values, "f" = pred))
+    }
   }
 }
 
@@ -237,7 +247,29 @@ makePredictionsAle = function(data, target, model, var1, var2 = NULL, knots,
   if (task.type == "regr") {
     pred = makePredictionsAleRegr(data, target, model, var1, var2, knots)
   } else if (task.type == "classif") {
-    pred = makePredictionsAleClassif(data, target, model, var = var1)
+    pred = makePredictionsAleClassif(data, target, model, var1, var2)
+  }
+  return(pred)
+}
+
+makePredictionsIce = function(data, var, model, knots, lines, task.type,
+                              selected.rows, data.selection.mode) {
+  if (data.selection.mode == "sampling") {
+    pred = makePredictionsIceSampled(
+      data = data,
+      var = var,
+      model = model,
+      knots = knots,
+      lines = lines,
+      task.type = task.type)
+  } else if (data.selection.mode == "individual") {
+    pred = makePredictionsIceSelected(
+      data = data,
+      var = var,
+      model = model,
+      knots = knots,
+      selected.rows = selected.rows,
+      task.type = task.type)
   }
   return(pred)
 }

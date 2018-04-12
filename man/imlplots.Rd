@@ -7,7 +7,7 @@
 imlplots(data, task, models, model.check = "all.features")
 }
 \arguments{
-\item{data}{A data frame of the test data.
+\item{data}{Input data frame.
 Has to contain exactly the same variables as the training data.}
 
 \item{task}{The mlr task the models were being trained on,

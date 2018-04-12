@@ -1,4 +1,3 @@
-
 checkSingleModel = function(data, features, model) {
   # checks for a single model, whether marginalPrediction() can use it to
   # predict with
@@ -59,6 +58,7 @@ checkAllModels = function(data, features, models) {
       checkSingleModel,
       list(data = data, model = mod$learner.model, features = features))
   })
+  return(check.list)
 }
 
 modelCheck = function(data, features, models, model.check) {
@@ -93,5 +93,6 @@ modelCheck = function(data, features, models, model.check) {
     stop("Aborting..", call. = FALSE)
   } else {
     message("Model check successful. Proceeding..")
+    return(invisible(NULL))
   }
 }
