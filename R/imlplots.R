@@ -353,7 +353,8 @@ imlplots = function(data, task, models, model.check = "all.features") {
               step.length = createSliderStepLength(decimal.places)
               mean = mean(data[[input.name]])
               sliderInput(
-                input.name,input.name,
+                inputId = input.name,
+                label = input.name,
                 min = as.numeric(min),
                 max = as.numeric(max),
                 value = mean,
