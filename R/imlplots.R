@@ -338,6 +338,54 @@ imlplots = function(data, task, models, model.check = "all.features") {
       lapply(selectorList(), FUN = function(x) eval(parse(text = x)))
     })
 
+    observeEvent({
+      # rendering feature sliders for numeric features
+      selected$features.numeric},
+      {
+        output$sliders = renderUI({
+          if (is.null(selected$features.numeric)) {
+          } else {
+            sliders = lapply(1:length(selected$features.numeric), function(i) {
+              input.name = selected$features.numeric[i]
+              min = min(data[[input.name]])
+              max = max(data[[input.name]])
+              decimal.places = max(getDecimalPlaces(min), getDecimalPlaces(max))
+              step.length = createSliderStepLength(decimal.places)
+              mean = mean(data[[input.name]])
+              sliderInput(
+                input.name,input.name,
+                min = as.numeric(min),
+                max = as.numeric(max),
+                value = mean,
+                step = step.length,
+                sep = "")
+            })
+            do.call(tagList, sliders)
+            # create HTML tags for all sliders
+          }
+        })
+      }
+    )
+    
+    observeEvent({
+      # render feature selectors
+      selected$features.factor},
+      {
+        output$selectors = renderUI({
+          if (is.null(selected$features.factor)) {
+          } else {
+            selectors = lapply(1:length(selected$features.factor), function(i) {
+              input.name = selected$features.factor[i]
+              factor.levels = levels(data[[input.name]])
+              selectInput(input.name, input.name, choices = factor.levels)})
+            
+            do.call(tagList, selectors)
+            # create HTML tags for all selectors
+          }
+        })
+      }
+    )
+    
     output$knots = renderUI({
       if (is.null(selected$knots)) {
         selected$knots = 30
@@ -1076,54 +1124,6 @@ imlplots = function(data, task, models, model.check = "all.features") {
         unselected.features =
           df$features.unused[!df$features.unused %in% c(selected$features)]
         df$values.adj[unselected.features] = data[unselected.features]
-      }
-    )
-
-    observeEvent({
-      # rendering feature sliders for numeric features
-      selected$features.numeric},
-      {
-        output$sliders = renderUI({
-          if (is.null(selected$features.numeric)) {
-          } else {
-            sliders = lapply(1:length(selected$features.numeric), function(i) {
-              input.name = selected$features.numeric[i]
-              min = min(data[[input.name]])
-              max = max(data[[input.name]])
-              decimal.places = max(getDecimalPlaces(min), getDecimalPlaces(max))
-              step.length = createSliderStepLength(decimal.places)
-              mean = mean(data[[input.name]])
-              sliderInput(
-                input.name,input.name,
-                min = as.numeric(min),
-                max = as.numeric(max),
-                value = mean,
-                step = step.length,
-                sep = "")
-            })
-            do.call(tagList, sliders)
-            # create HTML tags for all sliders
-          }
-        })
-      }
-    )
-
-    observeEvent({
-      # render feature selectors
-      selected$features.factor},
-      {
-        output$selectors = renderUI({
-          if (is.null(selected$features.factor)) {
-          } else {
-            selectors = lapply(1:length(selected$features.factor), function(i) {
-              input.name = selected$features.factor[i]
-              factor.levels = levels(data[[input.name]])
-              selectInput(input.name, input.name, choices = factor.levels)})
-
-            do.call(tagList, selectors)
-            # create HTML tags for all selectors
-          }
-        })
       }
     )
 
