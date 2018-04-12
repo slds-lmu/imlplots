@@ -175,6 +175,7 @@ makePredictionsAleRegr = function(data, target, model, var1, var2 = NULL,
   # ALEPlot function not (yet) completely reliable
   if (any(class(obj) == "warning") | any(class(obj) == "error")) {
     print(obj)
+    return("error")
   } else {
     # no error or warning
     if (is.null(var2)) {
