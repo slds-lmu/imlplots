@@ -8,6 +8,9 @@ imlplots: interpretable machine learning plots
 -   Individual Conditional Expectation (ICE) plots
 -   Accumulated Local Effect (ALE) plots
 
+The following video showcases the functionalities of the `imlplots` package:  
+https://www.youtube.com/watch?v=V6NIHtrKKEA
+
 Installation
 ============
 
