@@ -14,8 +14,6 @@ https://www.youtube.com/watch?v=V6NIHtrKKEA
 Installation
 ============
 
-The package can be installed directly from github with devtools
-
 ``` r
 # install.packages("devtools")
 devtools::install_github('compstat-lmu/imlplots')
