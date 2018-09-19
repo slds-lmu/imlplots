@@ -64,7 +64,7 @@ rf.mod = train("regr.randomForest", boston.task)
 glm.mod = train("regr.glm", boston.task)
 ```
 
-The trained model objects are saved in a list and passed to the 'imlplots()' function:
+The trained model objects are saved in a list and passed to the `imlplots()` function:
 
 ``` r
 mod.list = list(rf.mod, glm.mod)
