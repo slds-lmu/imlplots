@@ -2,13 +2,13 @@
 imlplots: interpretable machine learning plots
 ==============================================
 
-`imlplots` is an R package that provides an interactive Shiny based dashboard for visualizing feature effects in supervised learning models. It suports
+`imlplots` is an R package that provides an interactive Shiny based dashboard for visualizing feature effects in supervised learning models. The following plots are supported:
 
 -   Partial Dependence Plots (PDP)
 -   Individual Conditional Expectation (ICE) plots
 -   Accumulated Local Effect (ALE) plots
 
-The following video showcases the functionalities of the `imlplots` package:  
+A video showcases the functionalities of the `imlplots` package:  
 https://www.youtube.com/watch?v=V6NIHtrKKEA
 
 Installation
