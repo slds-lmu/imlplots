@@ -45,7 +45,7 @@ print(summarizeColumns(boston)[, -c(5, 6, 7)], digits = 4)
     ## 13   lstat numeric  0  12.6531   1.73000  37.970     0
     ## 14    medv numeric  0  22.5328   5.00000  50.000     0
 
-There is one single function 'imlplots()' to access the user interface. You need to specify three input arguments:
+There is a single function `imlplots() to access the user interface. You need to specify three input arguments:
 
 -   `data` - the input data frame
 -   `task`- a regression or classification task, created with MLR
