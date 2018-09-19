@@ -25,9 +25,7 @@ library(imlplots)
 Quickstart
 ==========
 
-You can fit classification and regression problems from the `mlr` package and analyse possible interaction effects in a Shiny dasbhoard.
-
-For quickstart we take the popular Boston Housing data, where we want to predict the median housing price in Boston.
+For a quickstart we take the popular Boston Housing dataset. We want to predict the median housing price in Boston.
 
 ``` r
 print(summarizeColumns(boston)[, -c(5, 6, 7)], digits = 4)
@@ -49,34 +47,30 @@ print(summarizeColumns(boston)[, -c(5, 6, 7)], digits = 4)
     ## 13   lstat numeric  0  12.6531   1.73000  37.970     0
     ## 14    medv numeric  0  22.5328   5.00000  50.000     0
 
-For using `imlplots` Shiny dashboard, three input arguments need to be specified
+There is one single function 'imlplots()' to access the user interface. You need to specify three input arguments:
 
--   `data` - the input data
--   `task`- the learning task
--   `models` - one or several trained models
+-   `data` - the input data frame
+-   `task`- a regression or classification task, created with MLR
+-   `models` - one or several models, trained with MLR
 
-We create a regression task with `medv` as target variable. The task structure is determined by `mlr` package.
+We create a regression task with `medv` as the target variable.
 
 ``` r
 boston.task = makeRegrTask(data = boston, target = "medv")
 ```
 
-The `imlplots` dashboard allows the comparison of multiple learning algorithms, therefore we fit two different models - first a random forest and second a GLM.
+You can train multiple models and compare them visually. We fit two different models: a random forest and a generalized linear model.
 
 ``` r
 rf.mod = train("regr.randomForest", boston.task)
 glm.mod = train("regr.glm", boston.task)
 ```
 
-The input for the Shiny app is a list of learners.
+The trained model objects are saved in a list and passed to the imlplots function:
 
 ``` r
 mod.list = list(rf.mod, glm.mod)
-```
 
-Now the Shiny app can be used.
-
-``` r
 imlplots(data = boston, task = boston.task, models = mod.list)
 ```
 
